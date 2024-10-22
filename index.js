@@ -30,15 +30,15 @@ const client = new Client({
 process.on("unhandledRejection", (err) => {
     console.log(err);
 
-    const channel = client.channels.cache.get(process.env.ERROR_LOG_CHANNEL_ID)
-    if (channel) channel.send({ content: "```" + err.stack + "```" })
+    const channel = client.channels.cache.get(process.env.ERROR_LOG_CHANNEL_ID);
+    if (channel) channel.send({ content: "```" + err.stack + "```" });
 });
 
 process.on("uncaughtException", (err) => {
     console.log(err);
     
-    const channel = client.channels.cache.get(process.env.ERROR_LOG_CHANNEL_ID)
-    if (channel) channel.send({ content: "```" + err.stack + "```" })
+    const channel = client.channels.cache.get(process.env.ERROR_LOG_CHANNEL_ID);
+    if (channel) channel.send({ content: "```" + err.stack + "```" });
 });
 
 mongoose.connect(process.env.MONGODB_URI).then(() => {

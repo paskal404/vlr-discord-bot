@@ -1,6 +1,5 @@
 const discord = require("discord.js");
 const fs = require("node:fs");
-const path = require('node:path');
 
 const { Routes } = require('discord-api-types/v10');
 
