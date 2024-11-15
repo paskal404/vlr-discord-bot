@@ -13,10 +13,12 @@ module.exports.bracketSchema = mongoose.model('Bracket', bracketContainerSchema)
 
 const eventSchema = new mongoose.Schema({
     guildId: { type: String, required: true },
-    eventId: { type: String, required: true, unique: true }, // ID wydarzenia
-    name: { type: String, required: true }, // Nazwa wydarzenia
-    url: { type: String, required: true }, // Link do wydarzenia
+    eventId: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    url: { type: String, required: true },
     matchesUrl: { type: String, required: true },
+    matches: { type: Array, default: [], required: true },
+    status: { type: String, required: true, },
     bracketContainers: [bracketContainerSchema]
 });
 

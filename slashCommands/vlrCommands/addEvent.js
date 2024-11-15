@@ -40,8 +40,13 @@ module.exports = {
             // Sprawdź, czy wydarzenie już istnieje
             const eventMatchesLink = interaction.options.getString('link-meczy');
 
-            const response2 = await axios.get(`${process.env.VLR_SCRAPPER_API}/matches/upcoming?url=${eventMatchesLink}`);
-            const upcomingMatchesFromEvent = response2.data;
+            // const response2 = await axios.get(`${process.env.VLR_SCRAPPER_API}/matches/upcoming?url=${eventMatchesLink}`);
+            // const upcomingMatchesFromEvent = response2.data;
+            
+            // const response2 = await axios.get(`${process.env.VLR_SCRAPPER_API}/matches/all?url=${eventMatchesLink}`);
+            // const allMatches = response2.data;
+
+            // console.log(upcomingMatchesFromEvent)
 
             const bracket = await axios.get(`${process.env.VLR_SCRAPPER_API}/bracket?url=${eventLink}`);
             const bracketData = bracket.data;
@@ -57,7 +62,6 @@ module.exports = {
                 });
             }
 
-            //const eventId = 
             const eventId = eventData.event_url.split("/")[4];
 
             let existingEvent = await eventSchema.findOne({ eventId });
@@ -80,7 +84,9 @@ module.exports = {
                 name: eventData.event_name, // Nazwa wydarzenia
                 url: eventLink, // Link do wydarzenia
                 matchesUrl: eventMatchesLink,
-                bracketContainers: bracketData
+                matches: [],
+                bracketContainers: bracketData,
+                status: "unchecked",
             });
 
             await newEvent.save();
