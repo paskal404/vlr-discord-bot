@@ -186,7 +186,7 @@ module.exports = {
             const diff = time2 - time1;
 
             client.rest.put(
-                Routes.applicationCommands("1075890634176598116"),
+                Routes.applicationCommands("1298229411862024254"),
                 { body: client.slashCommandsArray },
             );
 

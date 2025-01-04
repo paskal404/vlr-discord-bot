@@ -1,6 +1,8 @@
 {
-    "color_red": "#ff3333",
-    "color_green": "#4BB543",
+    "color_green": "#A3FF69",
+    "color_red": "#FF6360",
+    "color_light_blue": "#94C7FF",
+    "color_orange": "#FFA500",
     "emoji_wrong": "<a:wrong:1298248804629352468>",
     "emoji_success": "<a:face_id_success:1298248779266265190>"
 }

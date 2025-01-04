@@ -6,4 +6,5 @@ const guildSchema = new mongoose.Schema({
     access: { type: String, default: 'everyone' },
 });
 
+
 module.exports = mongoose.model('guild', guildSchema);

@@ -1,0 +1,1090 @@
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const settings = require('../../util/settings.json')
+const discord = require("discord.js");
+const utils = require('../../util/utils.js');
+
+const { predictionSchema } = require("../../models/Prediction.js");
+
+function toHoursAndMinutes(totalMinutes) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    let ht = "godzin"
+    let mt = "minut"
+
+    if (hours === 1) ht = "godzina"
+    else if ([2, 3, 4].includes(hours)) ht = "godziny"
+
+    if (minutes === 1) mt = "minuta"
+    else if ([2, 3, 4].includes(minutes)) mt = "minuty"
+
+    return `${hours} ${ht} ${minutes} ${mt}`;
+}
+
+function daysIntoTimestamp(date) {
+    return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())) / 24 / 60 / 60 / 1000;
+}
+
+//messages
+
+function countMessages(response, timestampDays) {
+    let messagesCount = 0;
+
+    for (const object of response) {
+        if (object.timestampDay >= timestampDays)
+            messagesCount += object.messages;
+    }
+
+    return messagesCount;
+}
+
+function countMonthMessages(response, date) {
+    let messagesCount = 0;
+
+    const month = date.getMonth();
+    const year = date.getFullYear();
+
+    for (const object of response) {
+        if (object.year == year && object.month == month)
+            messagesCount += object.messages;
+    }
+
+    return messagesCount;
+}
+
+function mostTextChannel(response, timestampDays) {
+    let channels = [];
+
+    for (const object of response) {
+        const channelIndex = channels.findIndex(channel => channel.channelId == object.channelId);
+
+        if (object.timestampDay >= timestampDays) {
+            if (channelIndex < 0) channels.push({ channelId: object.channelId, messages: object.messages })
+            else channels[channelIndex].messages += object.messages;
+        }
+    }
+
+    channels.sort((a, b) => b.messages - a.messages);
+
+    return channels[0];
+}
+
+function topTextUsers(response) {
+    let users = [];
+
+    for (const object of response) {
+        const userIndex = users.findIndex(user => user.userId == object.userId);
+
+        if (userIndex < 0) users.push({ userId: object.userId, messages: object.messages })
+        else users[userIndex].messages += object.messages;
+    }
+
+    users.sort((a, b) => b.messages - a.messages);
+
+    return users;
+}
+
+//reps
+
+function countReps(response, timestampDays) {
+    let repsCount = 0;
+
+    for (const object of response) {
+        if (object.timestampDay >= timestampDays)
+            repsCount += object.reputation;
+    }
+
+    return repsCount;
+}
+
+function countAllReps(response) {
+    let repsCount = 0;
+
+    for (const object of response) {
+        repsCount += object.reputation;
+    }
+
+    return repsCount;
+}
+
+function countMonthReps(response, date) {
+    let repsCount = 0;
+
+    const month = date.getMonth();
+    const year = date.getFullYear();
+
+    for (const object of response) {
+        if (object.year == year && object.month == month)
+            repsCount += object.reputation;
+    }
+
+    return repsCount;
+}
+
+function topGivedRepUsers(response) {
+    let users = [];
+
+    for (const object of response) {
+        const userIndex = users.findIndex(user => user.userId == object.userId);
+
+        if (userIndex < 0) users.push({ userId: object.userId, reputation: object.reputation })
+        else users[userIndex].reputation += object.reputation;
+    }
+
+    users.sort((a, b) => b.reputation - a.reputation);
+
+    return users;
+}
+
+function topReceivedRepUsers(response) {
+    let users = [];
+
+    for (const object of response) {
+        const userIndex = users.findIndex(user => user.userId == object.receiverId);
+
+        if (userIndex < 0) users.push({ userId: object.receiverId, reputation: object.reputation });
+        else users[userIndex].reputation += object.reputation;
+    }
+
+    users.sort((a, b) => b.reputation - a.reputation);
+
+    return users;
+}
+
+//voice
+
+function countMinutes(response, timestampDays) {
+    let minutesCount = 0;
+
+    for (const object of response) {
+        if (object.timestampDay >= timestampDays)
+            minutesCount += object.minutes;
+    }
+
+    return minutesCount;
+}
+
+
+
+function countMonthMinutes(response, date) {
+    let minutesCount = 0;
+
+    const month = date.getMonth();
+    const year = date.getFullYear();
+
+    for (const object of response) {
+        if (object.year == year && object.month == month)
+            minutesCount += object.minutes;
+    }
+
+    return minutesCount;
+}
+
+
+
+function mostVoiceChannel(response, timestampDays) {
+    let channels = [];
+
+    for (const object of response) {
+        const channelIndex = channels.findIndex(channel => channel.channelId == object.channelId);
+
+        if (object.timestampDay >= timestampDays) {
+            if (channelIndex < 0) channels.push({ channelId: object.channelId, minutes: object.minutes })
+            else channels[channelIndex].minutes += object.minutes;
+        }
+    }
+
+    channels.sort((a, b) => b.minutes - a.minutes);
+
+    return channels[0];
+}
+
+
+
+function topVoiceUsers(response) {
+    let users = [];
+
+    for (const object of response) {
+        const userIndex = users.findIndex(user => user.userId == object.userId);
+
+        if (userIndex < 0) users.push({ userId: object.userId, minutes: object.minutes })
+        else users[userIndex].minutes += object.minutes;
+    }
+
+    users.sort((a, b) => b.minutes - a.minutes);
+
+    return users;
+}
+
+const monthArray = [{ name: "Styczeń", value: "0" }, { name: "Luty", value: "1" }, { name: "Marzec", value: "2" }, { name: "Kwiecień", value: "3" }, { name: "Maj", value: "4" }, { name: "Czerwiec", value: "5" }, { name: "Lipiec", value: "6" }, { name: "Sierpień", value: "7" }, { name: "Wrzesień", value: "8" }, { name: "Październik", value: "9" }, { name: "Listopad", value: "10" }, { name: "Grudzień", value: "11" }]
+
+module.exports = {
+    name: "statystyki",
+    data: new SlashCommandBuilder()
+        .setName("statystyki")
+        .setDescription("Wyświetla zgromadzone informacje")
+
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("użytkownik")
+                .setDescription("Wyświetla statystyki danego użytkownika")
+
+                .addUserOption(option => option
+                    .setName("użytkownik")
+                    .setDescription("Podaj użytkownika, którego statystyki chcesz sprawdzić")
+                    .setRequired(true)
+                )
+
+                .addChannelOption(option => option
+                    .setName("kanał")
+                    .setDescription("Podaj kanał, którego statystyki chcesz sprawdzić")
+                )
+
+                .addStringOption(option => option
+                    .setName("miesiąc")
+                    .setDescription("Opcjonalnie podaj miesiąc, w którym mam sprawdzić statystyki kanału")
+                    .addChoices(
+                        { name: "Styczeń", value: "0" }, { name: "Luty", value: "1" }, { name: "Marzec", value: "2" }, { name: "Kwiecień", value: "3" }, { name: "Maj", value: "4" }, { name: "Czerwiec", value: "5" }, { name: "Lipiec", value: "6" }, { name: "Sierpień", value: "7" }, { name: "Wrzesień", value: "8" }, { name: "Październik", value: "9" }, { name: "Listopad", value: "10" }, { name: "Grudzień", value: "11" }
+                    )
+                )
+        )
+
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    async autocomplete(interaction) {
+        const focusedValue = interaction.options.getFocused();
+        let focusedOption = interaction.options.getFocused(true);
+
+        if (focusedOption.name === 'miesiąc') {
+            const filtered = monthArray.filter(choice => choice.name.startsWith(focusedValue));
+            await interaction.respond(
+                filtered.map(choice => ({ name: choice.name, value: choice.value })),
+            );
+        }
+
+        let items = ['Dzisiaj', 'Wczoraj', 'Ten tydzień', 'Ten miesiąc', '3 dni', '7 dni', '30 dni', '90 dni', 'Ten rok']
+
+        const filtered = items.filter(choice => choice.startsWith(focusedValue));
+        await interaction.respond(
+            filtered.map(choice => ({ name: choice, value: choice })),
+        );
+
+    },
+    run: async (client, interaction) => {
+        try {
+            const { guild } = interaction;
+
+            await interaction.deferReply();
+
+            const guildInfo = await utils.getGuildInfo(guild.id);
+
+            const subCommand = interaction.options.getSubcommand();
+
+            const date = new Date();
+            const timestampDay = daysIntoTimestamp(date);
+
+            //STATY REPUTACJI
+            if (subCommand === "reputacja") {
+                let member = interaction.member;
+
+                let month = interaction.options.getString("miesiąc");
+
+                if (month) {
+                    const repStatistics = await repStatisticsSchema.find({ guildId: guild.id, month });
+
+                    if (repStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk reputacji!`)
+                                    .setAuthor({
+                                        name: `Statystyki reputacji`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    const allReps = countReps(repStatistics, timestampDay - 50);
+
+                    const topGivedReps = topGivedRepUsers(repStatistics).slice(0, 3);
+                    const topReceivedReps = topReceivedRepUsers(repStatistics).slice(0, 3);
+
+                    const monthFormatted = monthArray.find(object => object.value == month);
+
+                    const repDescription = `### Statystyki reputacji\n` +
+                        `${settings.emoji_dot} \`Reputacja/${monthFormatted.name}:\` **${allReps}** reputacji\n\n` +
+                        `${settings.emoji_crown} Top otrzymanej reputacji: ${topReceivedReps.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topReceivedReps.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.reputation}** reputacji\n`).join("")}\n` +
+                        `${settings.emoji_crown} Top przyznanej reputacji: ${topGivedReps.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topGivedReps.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.reputation}** reputacji\n`).join("")}`
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto statystyki reputacji na **\`${monthFormatted.name}\`**\n` +
+                                    `${repDescription}`
+                                )
+                                .setAuthor({
+                                    name: `Statystyki reputacji`,
+                                    iconURL: interaction.member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${interaction.member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+
+                        ],
+                    })
+
+                } else {
+                    const repStatistics = await repStatisticsSchema.find({ guildId: guild.id });
+
+                    if (repStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk reputacji!`)
+                                    .setAuthor({
+                                        name: `Statystyki reputacji`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    const allReps = countAllReps(repStatistics);
+
+                    const repsCount30D = countReps(repStatistics, timestampDay - 29);
+                    const repsCount14D = countReps(repStatistics, timestampDay - 13);
+                    const repsCount7D = countReps(repStatistics, timestampDay - 6);
+                    const repsCount1D = countReps(repStatistics, timestampDay);
+
+                    const monthReps = countMonthReps(repStatistics, date);
+
+                    const topGivedReps = topGivedRepUsers(repStatistics).slice(0, 3);
+                    const topReceivedReps = topReceivedRepUsers(repStatistics).slice(0, 3);
+
+                    const monthFormatted = monthArray.find(object => object.value == month);
+
+
+                    const repDescription = `### Statystyki reputacji\n` +
+                        `${settings.emoji_dot} \`Łącznie przyznana reputacja:\` **${allReps}** reputacji\n\n` +
+                        `${settings.emoji_dot} \`Ostatnie 30 dni:\` **${repsCount30D}** reputacji\n` +
+                        `${settings.emoji_dot} \`Ostatnie 14 dni:\` **${repsCount14D}** reputacji\n` +
+                        `${settings.emoji_dot} \`Ostatnie 7 dni:\` **${repsCount7D}** reputacji\n\n` +
+                        `${settings.emoji_dot} \`Dzisiaj:\` **${repsCount1D}** reputacji\n` +
+                        `${settings.emoji_dot} \`W tym miesiącu:\` **${monthReps}** reputacji\n\n` +
+                        `${settings.emoji_crown} Top otrzymanej reputacji: ${topReceivedReps.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topReceivedReps.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.reputation}** reputacji\n`).join("")}\n` +
+                        `${settings.emoji_crown} Top przyznanej reputacji: ${topGivedReps.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topGivedReps.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.reputation}** reputacji\n`).join("")}`
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto statystyki reputacji\n` +
+                                    `${repDescription}`
+                                )
+                                .setAuthor({
+                                    name: `Statystyki reputacji`,
+                                    iconURL: interaction.member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${interaction.member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+
+                        ],
+                    })
+                }
+            }
+            //STATYSTYKI KATEGORII
+            else if (subCommand === "kategoria") {
+                let member = interaction.member;
+
+                let category = interaction.options.getChannel("kategoria");
+                
+                category = await guild.channels.fetch(category.id).catch((err) => {
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_wrong} Nie znaleziono podanej kategorii!`)
+                                .setAuthor({
+                                    name: `Statystyki`,
+                                    iconURL: member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_fail)
+                                .setTimestamp()
+
+                        ],
+                    })
+                })
+
+                let month = interaction.options.getString("miesiąc");
+
+                if (month) {
+                    const [messageStatistics, voiceStatistics] = await Promise.all([
+                        messageStatisticsSchema.find({ guildId: guild.id, categoryId: category.id, month: month }),
+                        voiceStatisticsSchema.find({ guildId: guild.id, categoryId: category.id, month: month })
+                    ]);
+
+                    if (messageStatistics.length < 1 && voiceStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk podanej kategorii!`)
+                                    .setAuthor({
+                                        name: `Statystyki ${category.name}`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    const messagesCount = countMessages(messageStatistics, timestampDay - 50);
+                    const topTextChannelUsers = topTextUsers(messageStatistics).slice(0, 3);
+
+                    const unmutedVoiceStatistics = voiceStatistics.filter(voiceStatisticsObject => voiceStatisticsObject.muted == false);
+
+                    const mutedMinutesCount = countMinutes(voiceStatistics, timestampDay - 50);
+                    const mutedTopVoiceChannelUsers = topVoiceUsers(voiceStatistics).slice(0, 3);
+
+                    const unmutedMinutesCount = countMinutes(unmutedVoiceStatistics, timestampDay - 50);
+                    const unmutedTopVoiceChannelUsers = topVoiceUsers(unmutedVoiceStatistics).slice(0, 3);
+
+                    const monthFormatted = monthArray.find(object => object.value == month);
+
+                    const textDescription = `### Statystyki tekstowe\n` +
+                        `${settings.emoji_dot} \`Wiadomości/${monthFormatted.name}:\` **${messagesCount}** wiadomości\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topTextChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topTextChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.messages}** wiadomości\n`).join("")}`
+
+
+                    const voiceDescription = `### Statystyki głosowe\n` +
+                        `${settings.emoji_headphones} **Spędzony czas na vc**\n` +
+                        `${settings.emoji_online} \`${toHoursAndMinutes(mutedMinutesCount)}\`\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${mutedTopVoiceChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${mutedTopVoiceChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}\n` +
+                        `${settings.emoji_microphone} **Czas rozmawiania na vc**\n` +
+                        `${settings.emoji_online} \`${toHoursAndMinutes(unmutedMinutesCount)}\`\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${unmutedTopVoiceChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${unmutedTopVoiceChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}`
+
+
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto statystyki kategorii <#${category.id}> na **\`${monthFormatted.name}\`**\n` +
+                                    `${textDescription}${voiceDescription}`
+                                )
+                                .setAuthor({
+                                    name: `Statystyki ${category.name}`,
+                                    iconURL: interaction.member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${interaction.member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+
+                        ],
+                    })
+                } else {
+                    const [messageStatistics, voiceStatistics] = await Promise.all([
+                        messageStatisticsSchema.find({ guildId: guild.id, categoryId: category.id }),
+                        voiceStatisticsSchema.find({ guildId: guild.id, categoryId: category.id })
+                    ]);
+
+                    if (messageStatistics.length < 1 && voiceStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk podanej kategorii!`)
+                                    .setAuthor({
+                                        name: `Statystyki ${category.name}`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    //messages
+                    const messagesCount30D = countMessages(messageStatistics, timestampDay - 29);
+                    const messagesCount14D = countMessages(messageStatistics, timestampDay - 13);
+                    const messagesCount7D = countMessages(messageStatistics, timestampDay - 6);
+                    const messagesCount1D = countMessages(messageStatistics, timestampDay);
+
+                    const monthMessages = countMonthMessages(messageStatistics, date);
+
+                    const topTextChannelUsers = topTextUsers(messageStatistics).slice(0, 3);
+
+                    //all voice
+                    const mutedMinutesCount30D = countMinutes(voiceStatistics, timestampDay - 29);
+                    const mutedMinutesCount14D = countMinutes(voiceStatistics, timestampDay - 13);
+                    const mutedMinutesCount7D = countMinutes(voiceStatistics, timestampDay - 6);
+                    const mutedMinutesCount1D = countMinutes(voiceStatistics, timestampDay);
+
+                    const mutedMinutesMonth = countMonthMinutes(voiceStatistics, date);
+
+                    const topMutedChannelUsers = topVoiceUsers(voiceStatistics).slice(0, 3);
+
+
+                    //unmuted voice
+                    const unmutedVoiceStatistics = voiceStatistics.filter(voiceStatisticsObject => voiceStatisticsObject.muted == false);
+
+                    const unmutedMinutesCount30D = countMinutes(unmutedVoiceStatistics, timestampDay - 29);
+                    const unmutedMinutesCount14D = countMinutes(unmutedVoiceStatistics, timestampDay - 13);
+                    const unmutedMinutesCount7D = countMinutes(unmutedVoiceStatistics, timestampDay - 6);
+                    const unmutedMinutesCount1D = countMinutes(unmutedVoiceStatistics, timestampDay);
+
+                    const unmutedMinutesMonth = countMonthMinutes(unmutedVoiceStatistics, date);
+
+                    const topUnmutedChannelUsers = topVoiceUsers(unmutedVoiceStatistics).slice(0, 3);
+
+                    const textDescription = `### Statystyki tekstowe\n` +
+                        `${settings.emoji_dot} \`Ostatnie 30 dni:\` **${messagesCount30D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Ostatnie 14 dni:\` **${messagesCount14D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Ostatnie 7 dni:\` **${messagesCount7D}** wiadomości\n\n` +
+                        `${settings.emoji_dot} \`Dzisiaj:\` **${messagesCount1D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`W tym miesiącu:\` **${monthMessages}** wiadomości\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topTextChannelUsers.length == 0 ? `\`brak\`` : ""}\n` +
+                        `${topTextChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.messages}** wiadomości\n`).join("")}`
+
+                    const voiceDescription = `### Statystyki głosowe\n` +
+                        `${settings.emoji_headphones} **Spędzony czas na vc**\n` +
+                        `${settings.emoji_online} \`Ostatnie 30 dni:\` ${toHoursAndMinutes(mutedMinutesCount30D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 14 dni:\` ${toHoursAndMinutes(mutedMinutesCount14D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 7 dni:\` ${toHoursAndMinutes(mutedMinutesCount7D)}\n\n` +
+                        `${settings.emoji_online} \`Dzisiaj:\` ${toHoursAndMinutes(mutedMinutesCount1D)}\n` +
+                        `${settings.emoji_online} \`W tym miesiącu:\` ${toHoursAndMinutes(mutedMinutesMonth)}\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topMutedChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topMutedChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}\n` +
+                        `${settings.emoji_microphone} **Czas rozmawiania na vc**\n` +
+                        `${settings.emoji_online} \`Ostatnie 30 dni:\` ${toHoursAndMinutes(unmutedMinutesCount30D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 14 dni:\` ${toHoursAndMinutes(unmutedMinutesCount14D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 7 dni:\` ${toHoursAndMinutes(unmutedMinutesCount7D)}\n\n` +
+                        `${settings.emoji_online} \`Dzisiaj:\` ${toHoursAndMinutes(unmutedMinutesCount1D)}\n` +
+                        `${settings.emoji_online} \`W tym miesiącu:\` ${toHoursAndMinutes(unmutedMinutesMonth)}\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topUnmutedChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topUnmutedChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}\n`
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto statystyki kategorii <#${category.id}>\n` +
+                                    `${textDescription}${voiceDescription}`
+                                )
+                                .setAuthor({
+                                    name: `Statystyki ${category.name}`,
+                                    iconURL: member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+
+                        ],
+                    });
+                }
+
+                //STATYSTYKI UŻYTKOWNIKA
+            } else if (subCommand == "użytkownik") {
+                let month = interaction.options.getString("miesiąc");
+
+                if (month) {
+                    let member = interaction.options.getUser("użytkownik");
+                    member = await guild.members.fetch(member.id).catch((err) => {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono podanego użytkownika!`)
+                                    .setAuthor({
+                                        name: `Statystyki`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    });
+
+                    let messageStatistics, voiceStatistics;
+
+                    let channel = interaction.options.getChannel("kanał");
+                    if (channel) {
+                        channel = await guild.channels.fetch(channel.id).catch((err) => {
+                            return interaction.editReply({
+                                embeds: [
+                                    new discord.EmbedBuilder()
+                                        .setDescription(`${settings.emoji_wrong} Nie znaleziono podanego kanału!`)
+                                        .setAuthor({
+                                            name: `Statystyki`,
+                                            iconURL: member.user.avatar ?
+                                                `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                                `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                        })
+                                        .setColor(settings.color_fail)
+                                        .setTimestamp()
+
+                                ],
+                            })
+                        })
+                    }
+
+                    if (channel) {
+                        [messageStatistics, voiceStatistics] = await Promise.all([
+                            messageStatisticsSchema.find({ guildId: guild.id, channelId: channel.id, userId: member.id, month: month }),
+                            voiceStatisticsSchema.find({ guildId: guild.id, channelId: channel.id, userId: member.id, month: month })
+                        ]);
+                    } else {
+                        [messageStatistics, voiceStatistics] = await Promise.all([
+                            messageStatisticsSchema.find({ guildId: guild.id, userId: member.id, month: month }),
+                            voiceStatisticsSchema.find({ guildId: guild.id, userId: member.id, month: month })
+                        ]);
+                    }
+
+                    if (messageStatistics.length < 1 && voiceStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk użytkownika <@${member.id}>`)
+                                    .setAuthor({
+                                        name: `Statystyki ${member.displayName}`,
+                                        iconURL: member.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    const monthFormatted = monthArray.find(object => object.value == month);
+
+                    const messagesCount = countMessages(messageStatistics, timestampDay - 50);
+                    const topMessageChannel = mostTextChannel(messageStatistics, timestampDay - 50);
+
+                    const unmutedVoiceStatistics = voiceStatistics.filter(voiceStatisticsObject => voiceStatisticsObject.muted == false);
+
+                    const unmutedMinutesCount = countMinutes(unmutedVoiceStatistics, timestampDay - 50);
+                    const topUnmutedVoiceChannel = mostVoiceChannel(unmutedVoiceStatistics, timestampDay - 50);
+
+                    const allMinutesCount = countMinutes(voiceStatistics, timestampDay - 50);
+                    const topAllVoiceChannel = mostVoiceChannel(voiceStatistics, timestampDay - 50);
+
+                    const textDescription = `### Statystyki kanałów tekstowych\n` +
+                        `${settings.emoji_dot} \`Wiadomości/${monthFormatted.name}:\` **${messagesCount}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Główny kanał:\` ${topMessageChannel && topMessageChannel.channelId ? `<#${topMessageChannel.channelId}>  **${topMessageChannel.messages}** wiadomości` : `brak`}\n`
+
+
+                    const voiceDescription = `### Statystyki kanałów głosowych\n` +
+                        `${settings.emoji_headphones} **Spędzony czas na vc**\n` +
+                        `${settings.emoji_dot} \`Spędzony czas\`: ${toHoursAndMinutes(allMinutesCount)}\n` +
+                        `${settings.emoji_dot} \`Główny kanał:\` ${topAllVoiceChannel && topAllVoiceChannel.channelId ? `<#${topAllVoiceChannel.channelId}>  ${toHoursAndMinutes(topAllVoiceChannel.minutes)}` : `brak`}\n\n` +
+                        `${settings.emoji_headphones} **Czas rozmawiania na vc**\n` +
+                        `${settings.emoji_dot} \`Spędzony czas\`: ${toHoursAndMinutes(unmutedMinutesCount)}\n` +
+                        `${settings.emoji_dot} \`Główny kanał:\` ${topUnmutedVoiceChannel && topUnmutedVoiceChannel.channelId ? `<#${topUnmutedVoiceChannel.channelId}>  ${toHoursAndMinutes(topUnmutedVoiceChannel.minutes)}` : `brak`}`
+
+
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto ${interaction.member.id == member.id ? `**Twoje** statystyki` : `statystyki <@${member.id}>`} na **\`${monthFormatted.name}\`**\n` +
+                                    `${channel ? channel.type == discord.ChannelType.GuildText ? `${textDescription}` : `${textDescription}${voiceDescription}` : `${textDescription}${voiceDescription}`}`)
+                                .setAuthor({
+                                    name: `Statystyki ${member.displayName} `,
+                                    iconURL: member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+                        ],
+                    });
+                } else {
+                    let member = interaction.options.getUser("użytkownik");
+                    member = await guild.members.fetch(member.id).catch((err) => {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono podanego użytkownika!`)
+                                    .setAuthor({
+                                        name: `Statystyki`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    });
+
+                    let messageStatistics, voiceStatistics;
+
+                    let channel = interaction.options.getChannel("kanał");
+                    if (channel) {
+                        channel = await guild.channels.fetch(channel.id).catch((err) => {
+                            return interaction.editReply({
+                                embeds: [
+                                    new discord.EmbedBuilder()
+                                        .setDescription(`${settings.emoji_wrong} Nie znaleziono podanego kanału!`)
+                                        .setAuthor({
+                                            name: `Statystyki`,
+                                            iconURL: member.user.avatar ?
+                                                `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                                `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                        })
+                                        .setColor(settings.color_fail)
+                                        .setTimestamp()
+
+                                ],
+                            })
+                        })
+                    }
+
+
+                    if (channel) {
+                        [messageStatistics, voiceStatistics] = await Promise.all([
+                            messageStatisticsSchema.find({ guildId: guild.id, channelId: channel.id, userId: member.id }),
+                            voiceStatisticsSchema.find({ guildId: guild.id, channelId: channel.id, userId: member.id })
+                        ]);
+                    } else {
+                        [messageStatistics, voiceStatistics] = await Promise.all([
+                            messageStatisticsSchema.find({ guildId: guild.id, userId: member.id }),
+                            voiceStatisticsSchema.find({ guildId: guild.id, userId: member.id })
+                        ]);
+                    }
+
+                    if (messageStatistics.length < 1 && voiceStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk użytkownika <@${member.id}>`)
+                                    .setAuthor({
+                                        name: `Statystyki ${member.displayName}`,
+                                        iconURL: member.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    //messages
+                    const messagesCount30D = countMessages(messageStatistics, timestampDay - 29);
+                    const messagesCount14D = countMessages(messageStatistics, timestampDay - 13);
+                    const messagesCount7D = countMessages(messageStatistics, timestampDay - 6);
+                    const messagesCount1D = countMessages(messageStatistics, timestampDay);
+
+                    const monthMessages = countMonthMessages(messageStatistics, date);
+
+                    const topTextChannel = mostTextChannel(messageStatistics, timestampDay - 29);
+
+                    //all voice
+                    const minutesCount30D = countMinutes(voiceStatistics, timestampDay - 29);
+                    const minutesCount14D = countMinutes(voiceStatistics, timestampDay - 13);
+                    const minutesCount7D = countMinutes(voiceStatistics, timestampDay - 6);
+                    const minutesCount1D = countMinutes(voiceStatistics, timestampDay);
+
+                    const monthMinutes = countMonthMinutes(voiceStatistics, date);
+
+                    const topVoiceChannel = mostVoiceChannel(voiceStatistics, timestampDay - 29);
+
+                    //unmuted voice
+                    const unmutedVoiceStatistics = voiceStatistics.filter(voiceStatisticsObject => voiceStatisticsObject.muted == false);
+
+                    const unmutedMinutesCount30D = countMinutes(unmutedVoiceStatistics, timestampDay - 29);
+                    const unmutedMinutesCount14D = countMinutes(unmutedVoiceStatistics, timestampDay - 13);
+                    const unmutedMinutesCount7D = countMinutes(unmutedVoiceStatistics, timestampDay - 6);
+                    const unmutedMinutesCount1D = countMinutes(unmutedVoiceStatistics, timestampDay);
+
+                    const unmutedMonthMinutes = countMonthMinutes(unmutedVoiceStatistics, date);
+
+                    const topUnmutedVoiceChannel = mostVoiceChannel(unmutedVoiceStatistics, timestampDay - 29);
+
+                    const textDescription =
+                        `### Statystyki kanałów tekstowych\n` +
+                        `${settings.emoji_dot} \`Ostatnie 30 dni:\` **${messagesCount30D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Ostatnie 14 dni:\` **${messagesCount14D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Ostatnie 7 dni:\` **${messagesCount7D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Dzisiaj:\` **${messagesCount1D}** wiadomości\n\n` +
+                        `${settings.emoji_dot} \`W tym miesiącu:\` **${monthMessages}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Główny kanał:\` ${topTextChannel ? `<#${topTextChannel.channelId}>` : `\`brak\``} **${topTextChannel?.messages || 0}** wiadomości (30 dni)\n`
+
+                    const voiceDescription = `### Statystyki kanałów głosowych\n` +
+                        `${settings.emoji_headphones} **Spędzony czas na vc**\n` +
+                        `${settings.emoji_dot} \`Ostatnie 30 dni:\` ${toHoursAndMinutes(minutesCount30D)}\n` +
+                        `${settings.emoji_dot} \`Ostatnie 14 dni:\` ${toHoursAndMinutes(minutesCount14D)}\n` +
+                        `${settings.emoji_dot} \`Ostatnie 7 dni:\` ${toHoursAndMinutes(minutesCount7D)}\n` +
+                        `${settings.emoji_dot} \`Dzisiaj:\` ${toHoursAndMinutes(minutesCount1D)}\n\n` +
+                        `${settings.emoji_dot} \`W tym miesiącu:\` ${toHoursAndMinutes(monthMinutes)}\n` +
+                        `${settings.emoji_dot} \`Główny kanał:\` ${topVoiceChannel ? `<#${topVoiceChannel.channelId}> ${toHoursAndMinutes(topVoiceChannel.minutes)}` : `brak`}\n\n` +
+                        `${settings.emoji_headphones} **Czas rozmawiania na vc**\n` +
+                        `${settings.emoji_dot} \`Ostatnie 30 dni:\` ${toHoursAndMinutes(unmutedMinutesCount30D)}\n` +
+                        `${settings.emoji_dot} \`Ostatnie 14 dni:\` ${toHoursAndMinutes(unmutedMinutesCount14D)}\n` +
+                        `${settings.emoji_dot} \`Ostatnie 7 dni:\` ${toHoursAndMinutes(unmutedMinutesCount7D)}\n` +
+                        `${settings.emoji_dot} \`Dzisiaj:\` ${toHoursAndMinutes(unmutedMinutesCount1D)}\n\n` +
+                        `${settings.emoji_dot} \`W tym miesiącu:\` ${toHoursAndMinutes(unmutedMonthMinutes)}\n` +
+                        `${settings.emoji_dot} \`Główny kanał:\` ${topUnmutedVoiceChannel ? `<#${topUnmutedVoiceChannel.channelId}> ${toHoursAndMinutes(topUnmutedVoiceChannel.minutes)}` : `brak`}`
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto ${interaction.member.id == member.id ? `**Twoje** statystyki` : `statystyki <@${member.id}>`}\n` +
+                                    `${channel ? channel.type == discord.ChannelType.GuildText ? `${textDescription}` : `${textDescription}${voiceDescription}` : `${textDescription}${voiceDescription}`}`
+                                )
+                                .setAuthor({
+                                    name: `Statystyki ${member.displayName}`,
+                                    iconURL: member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+                        ],
+                    });
+                }
+
+
+                //STATYSTYKI KANAŁU
+            } else if (subCommand == "kanał") {
+                let member = interaction.member;
+
+                let channel = interaction.options.getChannel("kanał");
+                channel = await guild.channels.fetch(channel.id).catch((err) => {
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_wrong} Nie znaleziono podanego kanału!`)
+                                .setAuthor({
+                                    name: `Statystyki`,
+                                    iconURL: member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_fail)
+                                .setTimestamp()
+
+                        ],
+                    })
+                })
+
+                let month = interaction.options.getString("miesiąc");
+
+                if (month) {
+                    const [messageStatistics, voiceStatistics] = await Promise.all([
+                        messageStatisticsSchema.find({ guildId: guild.id, channelId: channel.id, month: month }),
+                        voiceStatisticsSchema.find({ guildId: guild.id, channelId: channel.id, month: month })
+                    ]);
+
+                    if (messageStatistics.length < 1 && voiceStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk podanego kanału!`)
+                                    .setAuthor({
+                                        name: `Statystyki ${channel.name}`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    const messagesCount = countMessages(messageStatistics, timestampDay - 50);
+                    const topTextChannelUsers = topTextUsers(messageStatistics).slice(0, 3);
+
+                    const unmutedVoiceStatistics = voiceStatistics.filter(voiceStatisticsObject => voiceStatisticsObject.muted == false);
+
+                    const mutedMinutesCount = countMinutes(voiceStatistics, timestampDay - 50);
+                    const mutedTopVoiceChannelUsers = topVoiceUsers(voiceStatistics).slice(0, 3);
+
+                    const unmutedMinutesCount = countMinutes(unmutedVoiceStatistics, timestampDay - 50);
+                    const unmutedTopVoiceChannelUsers = topVoiceUsers(unmutedVoiceStatistics).slice(0, 3);
+
+                    const monthFormatted = monthArray.find(object => object.value == month);
+
+                    const textDescription = `### Statystyki tekstowe\n` +
+                        `${settings.emoji_dot} \`Wiadomości/${monthFormatted.name}:\` **${messagesCount}** wiadomości\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topTextChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topTextChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.messages}** wiadomości\n`).join("")}`
+
+
+                    const voiceDescription = `### Statystyki głosowe\n` +
+                        `${settings.emoji_headphones} **Spędzony czas na vc**\n` +
+                        `${settings.emoji_online} \`${toHoursAndMinutes(mutedMinutesCount)}\`\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${mutedTopVoiceChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${mutedTopVoiceChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}\n` +
+                        `${settings.emoji_microphone} **Czas rozmawiania na vc**\n` +
+                        `${settings.emoji_online} \`${toHoursAndMinutes(unmutedMinutesCount)}\`\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${unmutedTopVoiceChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${unmutedTopVoiceChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}`
+
+
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto statystyki kanału <#${channel.id}> na **\`${monthFormatted.name}\`**\n` +
+                                    `${channel.type == discord.ChannelType.GuildText ? `${textDescription}` : `${textDescription}${voiceDescription}`}`
+                                )
+                                .setAuthor({
+                                    name: `Statystyki ${channel.name}`,
+                                    iconURL: interaction.member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${interaction.member.user.id}/${interaction.member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${interaction.member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+
+                        ],
+                    })
+                } else {
+                    const [messageStatistics, voiceStatistics] = await Promise.all([
+                        messageStatisticsSchema.find({ guildId: guild.id, channelId: channel.id }),
+                        voiceStatisticsSchema.find({ guildId: guild.id, channelId: channel.id })
+                    ]);
+
+                    if (messageStatistics.length < 1 && voiceStatistics.length < 1) {
+                        return interaction.editReply({
+                            embeds: [
+                                new discord.EmbedBuilder()
+                                    .setDescription(`${settings.emoji_wrong} Nie znaleziono statystyk podanego kanału!`)
+                                    .setAuthor({
+                                        name: `Statystyki ${channel.name}`,
+                                        iconURL: client.user.avatar ?
+                                            `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png` :
+                                            `https://cdn.discordapp.com/embed/avatars/${client.user.discriminator % 5}.png`
+                                    })
+                                    .setColor(settings.color_fail)
+                                    .setTimestamp()
+
+                            ],
+                        });
+                    }
+
+                    //messages
+                    const messagesCount30D = countMessages(messageStatistics, timestampDay - 29);
+                    const messagesCount14D = countMessages(messageStatistics, timestampDay - 13);
+                    const messagesCount7D = countMessages(messageStatistics, timestampDay - 6);
+                    const messagesCount1D = countMessages(messageStatistics, timestampDay);
+
+                    const monthMessages = countMonthMessages(messageStatistics, date);
+
+                    const topTextChannelUsers = topTextUsers(messageStatistics).slice(0, 3);
+
+                    //all voice
+                    const mutedMinutesCount30D = countMinutes(voiceStatistics, timestampDay - 29);
+                    const mutedMinutesCount14D = countMinutes(voiceStatistics, timestampDay - 13);
+                    const mutedMinutesCount7D = countMinutes(voiceStatistics, timestampDay - 6);
+                    const mutedMinutesCount1D = countMinutes(voiceStatistics, timestampDay);
+
+                    const mutedMinutesMonth = countMonthMinutes(voiceStatistics, date);
+
+                    const topMutedChannelUsers = topVoiceUsers(voiceStatistics).slice(0, 3);
+
+
+                    //unmuted voice
+                    const unmutedVoiceStatistics = voiceStatistics.filter(voiceStatisticsObject => voiceStatisticsObject.muted == false);
+
+                    const unmutedMinutesCount30D = countMinutes(unmutedVoiceStatistics, timestampDay - 29);
+                    const unmutedMinutesCount14D = countMinutes(unmutedVoiceStatistics, timestampDay - 13);
+                    const unmutedMinutesCount7D = countMinutes(unmutedVoiceStatistics, timestampDay - 6);
+                    const unmutedMinutesCount1D = countMinutes(unmutedVoiceStatistics, timestampDay);
+
+                    const unmutedMinutesMonth = countMonthMinutes(unmutedVoiceStatistics, date);
+
+                    const topUnmutedChannelUsers = topVoiceUsers(unmutedVoiceStatistics).slice(0, 3);
+
+                    const textDescription = `### Statystyki tekstowe\n` +
+                        `${settings.emoji_dot} \`Ostatnie 30 dni:\` **${messagesCount30D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Ostatnie 14 dni:\` **${messagesCount14D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`Ostatnie 7 dni:\` **${messagesCount7D}** wiadomości\n\n` +
+                        `${settings.emoji_dot} \`Dzisiaj:\` **${messagesCount1D}** wiadomości\n` +
+                        `${settings.emoji_dot} \`W tym miesiącu:\` **${monthMessages}** wiadomości\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topTextChannelUsers.length == 0 ? `\`brak\`` : ""}\n` +
+                        `${topTextChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - **${user.messages}** wiadomości\n`).join("")}`
+
+                    const voiceDescription = `### Statystyki głosowe\n` +
+                        `${settings.emoji_headphones} **Spędzony czas na vc**\n` +
+                        `${settings.emoji_online} \`Ostatnie 30 dni:\` ${toHoursAndMinutes(mutedMinutesCount30D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 14 dni:\` ${toHoursAndMinutes(mutedMinutesCount14D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 7 dni:\` ${toHoursAndMinutes(mutedMinutesCount7D)}\n\n` +
+                        `${settings.emoji_online} \`Dzisiaj:\` ${toHoursAndMinutes(mutedMinutesCount1D)}\n` +
+                        `${settings.emoji_online} \`W tym miesiącu:\` ${toHoursAndMinutes(mutedMinutesMonth)}\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topMutedChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topMutedChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}\n` +
+                        `${settings.emoji_microphone} **Czas rozmawiania na vc**\n` +
+                        `${settings.emoji_online} \`Ostatnie 30 dni:\` ${toHoursAndMinutes(unmutedMinutesCount30D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 14 dni:\` ${toHoursAndMinutes(unmutedMinutesCount14D)}\n` +
+                        `${settings.emoji_online} \`Ostatnie 7 dni:\` ${toHoursAndMinutes(unmutedMinutesCount7D)}\n\n` +
+                        `${settings.emoji_online} \`Dzisiaj:\` ${toHoursAndMinutes(unmutedMinutesCount1D)}\n` +
+                        `${settings.emoji_online} \`W tym miesiącu:\` ${toHoursAndMinutes(unmutedMinutesMonth)}\n\n` +
+                        `${settings.emoji_crown} Top 3 użytkowników: ${topUnmutedChannelUsers.length == 0 ? `\`brak\`` : ``}\n` +
+                        `${topUnmutedChannelUsers.map(user => `${settings.emoji_dot} <@${user.userId}> - \`${toHoursAndMinutes(user.minutes)}\`\n`).join("")}\n`
+
+                    return interaction.editReply({
+                        embeds: [
+                            new discord.EmbedBuilder()
+                                .setDescription(`${settings.emoji_correct} Oto statystyki kanału <#${channel.id}>\n` +
+                                    `${channel.type == discord.ChannelType.GuildText ? `${textDescription}` : `${textDescription}${voiceDescription}`}`
+                                )
+                                .setAuthor({
+                                    name: `Statystyki ${channel.name}`,
+                                    iconURL: member.user.avatar ?
+                                        `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png` :
+                                        `https://cdn.discordapp.com/embed/avatars/${member.user.discriminator % 5}.png`
+                                })
+                                .setColor(settings.color_success)
+                                .setTimestamp()
+
+                        ],
+                    });
+                }
+            }
+        } catch (err) {
+            console.log(err)
+            return interaction.editReply({
+                ephemeral: true,
+                content: `Błąd! Skontaktuj się z developerem!`
+            })
+        }
+    }
+};

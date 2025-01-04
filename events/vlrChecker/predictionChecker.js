@@ -12,38 +12,62 @@ module.exports = {
 
             for (const predictionDoc of predictions) {
 
-                const event = events.find((event) => event.eventId === predictionDoc.eventId)
-                if (!event) break;
+                const event = events.find((ev) => ev.eventId === predictionDoc.eventId || ev.name === predictionDoc.eventId)
+                if (!event) {
+                    continue;
+                }
 
                 const match = event.matches.find((match) => predictionDoc.matchTitle === `${match.team_one_name} vs. ${match.team_two_name}` && match.status === "final");
-                if (!match) break;
+                if (!match) {
+                    continue;
+                }   
 
                 let points = 0;
 
-                //That shit works, dont touch please XD
                 const predictedScore = `${predictionDoc.matchScore.firstScore}:${predictionDoc.matchScore.secondScore}`;
                 const actualScore = `${match.team_one_score}:${match.team_two_score}`
+
 
                 if (predictedScore === actualScore) {
                     points++;
                 }
 
-                for (let i = 0; i < match.mapLinks.length; i++){
-                    const prediction = predictionDoc.mapScores[i];
-                    if (!prediction) break;
+                if (predictionDoc.predictedOutcome === "firstTeamWin" && parseInt(match.team_one_score) > parseInt(match.team_two_score) ) {
+                    points++;
+                }
+                
+                if (predictionDoc.predictedOutcome === "secondTeamWin" && parseInt(match.team_one_score) < parseInt(match.team_two_score) ) {
+                    points++;
+                }
 
-                    const mapMatch = match.mapLinks[i];
-                    if (!mapMatch) break;
-
-                    const predictedMapScore = `${prediction.firstScore}:${prediction.secondScore}`;
-                    const actualMapScore = `${mapMatch.team_one_map_score}:${mapMatch.team_two_map_score}`;
-
-                    if (predictedMapScore === actualMapScore) {
+                if (match.bo === "Bo3" || match.bo === "Bo5") {
+                    let guessed = 0;
+    
+                    for (let i = 0; i < match.mapLinks.length; i++) {
+                        const prediction = predictionDoc.mapScores[i];
+                        if (!prediction) break;
+    
+                        const mapMatch = match.mapLinks[i];
+                        if (!mapMatch) break;
+    
+                        const predictedMapScore = `${prediction.firstScore}:${prediction.secondScore}`;
+                        const actualMapScore = `${mapMatch.team_one_map_score}:${mapMatch.team_two_map_score}`;
+    
+                        if (predictedMapScore === actualMapScore) {
+                            guessed++;
+                        }
+                    }
+    
+                    if (guessed === match.mapLinks.length) {
                         points++;
                     }
                 }
 
-                console.log(points)
+
+                // console.log(points)
+
+                await predictionSchema.updateOne({ _id: predictionDoc._id }, { checkedAt: Date.now(), checked: true, points });
+
             }
         }
 
@@ -56,7 +80,7 @@ module.exports = {
         }
 
         checkServers();
-        const newInterval = setInterval(checkServers, 1000 * 60);
+        const newInterval = setInterval(checkServers, 1000 * 5);
         client.readyIntervals.push(newInterval);
 
     },

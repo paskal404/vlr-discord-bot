@@ -1,4 +1,3 @@
-// models/Event.js
 const mongoose = require('mongoose');
 
 const predictionSchema = new mongoose.Schema({
@@ -15,33 +14,17 @@ const predictionSchema = new mongoose.Schema({
             type: String, required: true,
         },
     },
-    // map1Score: {
-    //     firstScore: {
-    //         type: String,
-    //     },
-    //     secondScore: {
-    //         type: String,
-    //     },
-    // },
-    // map2Score: {
-    //     firstScore: {
-    //         type: String,
-    //     },
-    //     secondScore: {
-    //         type: String,
-    //     },
-    // },
-    // map3Score: {
-    //     firstScore: {
-    //         type: String,
-    //     },
-    //     secondScore: {
-    //         type: String,
-    //     },
-    // },
     mapScores: { type: Array, default: [], required: true },
     checked: { type: Boolean, required: true, default: false },
 
+    predictedOutcome: {
+        type: String,
+        enum: ['firstTeamWin', 'draw', 'secondTeamWin'], // restricts the possible values
+        required: true,
+    },
+
+    createdAt: { type: String, required: true },
+    checkedAt: { type: String },
 });
 
 module.exports.predictionSchema = mongoose.model('Prediction', predictionSchema);

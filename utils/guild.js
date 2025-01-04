@@ -7,7 +7,7 @@ module.exports.getGuildSettings = async (client, guildId) => {
         const newGuildSettings = new guildSchema({
             guildId: guildId,
             prefix: "!",
-            access: "everyone"
+            access: "everyone",
         });
 
         await newGuildSettings.save();

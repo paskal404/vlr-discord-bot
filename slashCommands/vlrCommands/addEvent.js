@@ -1,7 +1,8 @@
-// commands/addEvent.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
-const { eventSchema } = require('../../models/Event'); // Model dla wydarzenia
+const { eventSchema } = require('../../models/Event');
+const settings = require("../../utils/settings.json");
+const discord = require("discord.js")
 
 module.exports = {
     name: "dodaj-event",
@@ -15,7 +16,10 @@ module.exports = {
         .addStringOption(option =>
             option.setName('link-meczy')
                 .setDescription('Podaj link do meczy vlr.gg')
-                .setRequired(true)),
+                .setRequired(true))
+
+                .setDMPermission(false)
+                .setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
     run: async (client, interaction) => {
         await interaction.deferReply({ ephemeral: true });
 
@@ -30,9 +34,9 @@ module.exports = {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle('Błąd')
-                            .setColor('#FF0000')
-                            .setDescription('Nie udało się znaleźć wydarzenia pod tym linkiem.')
+                            .setTitle('Dodawanie eventu')
+                            .setColor(settings.color_red)
+                            .setDescription('Nie udało się znaleźć eventu pod tym linkiem.')
                     ]
                 });
             }
@@ -42,7 +46,7 @@ module.exports = {
 
             // const response2 = await axios.get(`${process.env.VLR_SCRAPPER_API}/matches/upcoming?url=${eventMatchesLink}`);
             // const upcomingMatchesFromEvent = response2.data;
-            
+
             // const response2 = await axios.get(`${process.env.VLR_SCRAPPER_API}/matches/all?url=${eventMatchesLink}`);
             // const allMatches = response2.data;
 
@@ -55,8 +59,8 @@ module.exports = {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle('Błąd')
-                            .setColor('#FF0000')
+                            .setTitle('Dodawanie eventu')
+                            .setColor(settings.color_red)
                             .setDescription('Nie udało się znaleźć meczy pod tym linkiem!')
                     ]
                 });
@@ -70,9 +74,9 @@ module.exports = {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle('Wydarzenie już istnieje')
-                            .setColor('#FF0000')
-                            .setDescription(`Wydarzenie o ID \`${eventId}\` już istnieje w bazie danych.`)
+                            .setTitle('Dodawanie eventu')
+                            .setColor(settings.color_red)
+                            .setDescription(`Event o ID \`${eventId}\` już istnieje w bazie danych.`)
                     ]
                 });
             }
@@ -94,9 +98,9 @@ module.exports = {
             return interaction.editReply({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('Wydarzenie dodane')
-                        .setColor('#00FF00')
-                        .setDescription(`Dodano wydarzenie: \`${eventData.event_name}\` o ID \`${eventId}\` do bazy danych!`)
+                        .setTitle('Dodawanie eventu')
+                        .setColor(settings.color_green)
+                        .setDescription(`Dodano event \`${eventData.event_name}\` o ID \`${eventId}\` do bazy danych!`)
                 ]
             });
         } catch (error) {
@@ -104,9 +108,9 @@ module.exports = {
             return interaction.editReply({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('Błąd')
-                        .setColor('#FF0000')
-                        .setDescription('Wystąpił błąd podczas dodawania wydarzenia.')
+                        .setTitle('Dodawanie eventu')
+                        .setColor(settings.color_red)
+                        .setDescription('Wystąpił błąd podczas dodawania eventu.')
                 ]
             });
         }
