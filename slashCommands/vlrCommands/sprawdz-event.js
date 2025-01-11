@@ -7,6 +7,8 @@ const { eventSchema } = require("../../models/Event")
 
 const { createCanvas, loadImage } = require('canvas');
 
+const imageCache = new Map();
+
 async function renderBracketGraphic(bracketData) {
     // Bracket rendering settings
     const rowHeight = 150;           // Height of each match row
@@ -127,8 +129,8 @@ async function renderBracketGraphic(bracketData) {
         }
         startY = startY + 700;
 
-        console.log(highestXValue)
-        console.log(highestYValue)
+        // console.log(highestXValue)
+        // console.log(highestYValue)
     }
 
     const canvasWidth = highestXValue + 400;
@@ -260,20 +262,37 @@ async function renderBracketGraphic(bracketData) {
                 ctx.stroke();
                 ctx.fill();
 
-                for (const [teamIndex, team] of match.teams.entries()) {
-                    ctx.fillStyle = team.isWinner ? '#4BB543' : '#FFFFFF';
-                    ctx.font = 'bold 16px Arial';
-                    ctx.fillText(`${team.name} (${team.score})`, team.xCord, team.yCord, 230);
+				
+				const imagePromises = match.teams.map(async (team, teamIndex) => {
+					if (team.img) {
+						if (imageCache.has(team.img)) {
+							return { teamIndex: teamIndex, img: imageCache.get(team.img) };
+						} else {
+							try {
+								const img = await loadImage(team.img);
+								imageCache.set(team.img, img);
+								return { teamIndex: teamIndex, img: img };
+							} catch (err) {
+								console.error('Error loading image:', err);
+								return { teamIndex: teamIndex, img: null };
+							}
+						}
+					}
+					return { teamIndex: teamIndex, img: null };
+				});
 
-                    if (team.img) {
-                        try {
-                            const img = await loadImage(team.img);
-                            if (img) ctx.drawImage(img, team.imgXCord, team.imgYCord, 30, 30);
-                        } catch (err) {
-                            console.error('Error loading image:', err);
-                        }
-                    }
-                }
+				const images = await Promise.all(imagePromises);
+
+				for (const [teamIndex, team] of match.teams.entries()) {
+					ctx.fillStyle = team.isWinner ? '#4BB543' : '#FFFFFF';
+					ctx.font = 'bold 16px Arial';
+					ctx.fillText(`${team.name} (${team.score})`, team.xCord, team.yCord, 230);
+
+					const image = images.find(img => img.teamIndex === teamIndex);
+					if (image && image.img) {
+						ctx.drawImage(image.img, team.imgXCord, team.imgYCord, 30, 30);
+					}
+				}
             }
         }
     }
@@ -330,9 +349,12 @@ module.exports = {
             })
         }
 
+		
+		console.time("renderBracketGraphic");
         const buffer = await renderBracketGraphic(event.bracketContainers);
-
-        const attachment = new discord.AttachmentBuilder(Buffer.from(buffer));
+		console.timeEnd("renderBracketGraphic");
+		
+        const attachment = new discord.AttachmentBuilder(Buffer.from(buffer), { compressionLevel: 9 });
         attachment.name = 'bracket.png';
 
         return interaction.editReply({ content: "", files: [attachment] })

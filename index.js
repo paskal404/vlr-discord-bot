@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js");
 const mongoose = require("mongoose");
+const { REST } = require('@discordjs/rest');
 
 require("dotenv").config();
 
@@ -26,6 +27,15 @@ const client = new Client({
     autoReconnect: true,
     partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.GuildMember, Partials.User],
 });
+
+client.on('debug', (...args) => console.log('debug', ...args));
+client.on('rateLimit', (...args) => console.log('rateLimit', ...args));
+
+async function rateLimitFunction(rateLimit) {
+    console.log(rateLimit)
+}
+
+client.rest = new REST({ version: '10', rejectOnRateLimit: rateLimitFunction }).setToken(process.env.DISCORD_TOKEN);
 
 process.on("unhandledRejection", (err) => {
     console.log(err);

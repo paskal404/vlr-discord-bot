@@ -18,19 +18,21 @@ module.exports = {
                 for (const match of eventMatches) {
                     // if (match.status === "Completed") continue;
 
-                    const response2 = await axios.get(`${process.env.VLR_SCRAPPER_API}/match?url=${match.match_url}`);
+                    const response2 = await axios.get(`${process.env.VLR_SCRAPPER_API}/match?url=${match.match_url}/?game=all&tab=overview`);
                     const matchInfo = response2.data;
 
-                    for (let i = 0; i < matchInfo.mapLinks.length; i++) {
-                        const mapLink = matchInfo.mapLinks[i];
-                        // console.log(mapLink)
-                        if (!mapLink) continue;
+                    // for (let i = 0; i < matchInfo.mapLinks.length; i++) {
+                    //     const mapLink = matchInfo.mapLinks[i];
+                    //     // console.log(mapLink)
+                    //     if (!mapLink) continue;
 
-                        const response3 = await axios.get(`${process.env.VLR_SCRAPPER_API}/matchMap?url=${match.match_url}/?game=${mapLink.mapGameId}`);
-                        const mapInfo = response3.data;
+                    //     const response3 = await axios.get(`${process.env.VLR_SCRAPPER_API}/matchMap?url=${match.match_url}/?game=${mapLink.mapGameId}`);
+                    //     const mapInfo = response3.data;
 
-                        matchInfo.mapLinks[i] = { ...matchInfo.mapLinks[i], ...mapInfo };
-                    }
+                    //     matchInfo.mapLinks[i] = { ...matchInfo.mapLinks[i], ...mapInfo };
+                    // }
+
+					// console.log(matchInfo.mapLinks)
 
                     fetchedMatches.push(matchInfo)
                 }

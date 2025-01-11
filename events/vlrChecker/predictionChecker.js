@@ -8,9 +8,9 @@ module.exports = {
     execute(client) {
         async function checkServer(guild) {
             const events = await eventSchema.find({ guildId: guild.id });
-            const predictions = await predictionSchema.find({ guildId: guild.id, checked: false });
+            let predictions = await predictionSchema.find({ guildId: guild.id, checked: false });
 
-            for (const predictionDoc of predictions) {
+            for (let predictionDoc of predictions) {
 
                 const event = events.find((ev) => ev.eventId === predictionDoc.eventId || ev.name === predictionDoc.eventId)
                 if (!event) {
@@ -24,20 +24,35 @@ module.exports = {
 
                 let points = 0;
 
+                let topFraggerGuessed = false;
+                let predictedOutcomeGuessed = "false";
+
                 const predictedScore = `${predictionDoc.matchScore.firstScore}:${predictionDoc.matchScore.secondScore}`;
                 const actualScore = `${match.team_one_score}:${match.team_two_score}`
 
+                const players = match.team_one_players.concat(match.team_two_players);
+                const topFragger = players.sort((a, b) => b.kills - a.kills)[0];
 
-                if (predictedScore === actualScore) {
+                const topFraggers = players.filter((player) => player.kills === topFragger.kills).map((player) => player.player_name);
+
+                if (topFraggers.includes(predictionDoc.topFragger)) {
+                    topFraggerGuessed = true;
                     points++;
                 }
-
+                
                 if (predictionDoc.predictedOutcome === "firstTeamWin" && parseInt(match.team_one_score) > parseInt(match.team_two_score) ) {
+                    predictedOutcomeGuessed = "onlyWinnerTeam";
                     points++;
                 }
                 
                 if (predictionDoc.predictedOutcome === "secondTeamWin" && parseInt(match.team_one_score) < parseInt(match.team_two_score) ) {
+                    predictedOutcomeGuessed = "onlyWinnerTeam";
                     points++;
+                }
+                
+                if (predictedScore === actualScore) {
+                    points++;
+                    predictedOutcomeGuessed = "wholeScore";
                 }
 
                 if (match.bo === "Bo3" || match.bo === "Bo5") {
@@ -53,12 +68,15 @@ module.exports = {
                         const predictedMapScore = `${prediction.firstScore}:${prediction.secondScore}`;
                         const actualMapScore = `${mapMatch.team_one_map_score}:${mapMatch.team_two_map_score}`;
     
+                        predictionDoc.mapScores[i].mapGuessed = false;
                         if (predictedMapScore === actualMapScore) {
+                            predictionDoc.mapScores[i].mapGuessed = true;
                             guessed++;
                         }
                     }
     
                     if (guessed === match.mapLinks.length) {
+                        predictionDoc.allMapsGuessed = true;
                         points++;
                     }
                 }
@@ -66,7 +84,7 @@ module.exports = {
 
                 // console.log(points)
 
-                await predictionSchema.updateOne({ _id: predictionDoc._id }, { checkedAt: Date.now(), checked: true, points });
+                await predictionSchema.updateOne({ _id: predictionDoc._id }, { checkedAt: Date.now(), checked: true, points, topFraggerGuessed, predictedOutcomeGuessed, mapScores: predictionDoc.mapScores, allMapsGuessed: predictionDoc.allMapsGuessed });
 
             }
         }
