@@ -55,36 +55,10 @@ module.exports = {
                     predictedOutcomeGuessed = "wholeScore";
                 }
 
-                if (match.bo === "Bo3" || match.bo === "Bo5") {
-                    let guessed = 0;
-    
-                    for (let i = 0; i < match.mapLinks.length; i++) {
-                        const prediction = predictionDoc.mapScores[i];
-                        if (!prediction) break;
-    
-                        const mapMatch = match.mapLinks[i];
-                        if (!mapMatch) break;
-    
-                        const predictedMapScore = `${prediction.firstScore}:${prediction.secondScore}`;
-                        const actualMapScore = `${mapMatch.team_one_map_score}:${mapMatch.team_two_map_score}`;
-    
-                        predictionDoc.mapScores[i].mapGuessed = false;
-                        if (predictedMapScore === actualMapScore) {
-                            predictionDoc.mapScores[i].mapGuessed = true;
-                            guessed++;
-                        }
-                    }
-    
-                    if (guessed === match.mapLinks.length) {
-                        predictionDoc.allMapsGuessed = true;
-                        points++;
-                    }
-                }
-
 
                 // console.log(points)
 
-                await predictionSchema.updateOne({ _id: predictionDoc._id }, { checkedAt: Date.now(), checked: true, points, topFraggerGuessed, predictedOutcomeGuessed, mapScores: predictionDoc.mapScores, allMapsGuessed: predictionDoc.allMapsGuessed });
+                await predictionSchema.updateOne({ _id: predictionDoc._id }, { checkedAt: Date.now(), checked: true, points, topFraggerGuessed, predictedOutcomeGuessed });
 
             }
         }

@@ -37,31 +37,10 @@ module.exports = {
 				.setDescription('Podaj wynik w formacie X:X np 2:1')
 				.setRequired(true))
 		.addStringOption(option =>
-			option.setName('wynik-1-mapy')
-				.setDescription('Podaj wynik w formacie X:X np 13:1')
-				.setRequired(false))
-		.addStringOption(option =>
-			option.setName('wynik-2-mapy')
-				.setDescription('Podaj wynik w formacie X:X np 13:1')
-				.setRequired(false))
-		.addStringOption(option =>
-			option.setName('wynik-3-mapy')
-				.setDescription('Podaj wynik w formacie X:X np 13:1')
-				.setRequired(false))
-		.addStringOption(option =>
-			option.setName('wynik-4-mapy')
-				.setDescription('Podaj wynik w formacie X:X np 13:1')
-				.setRequired(false))
-		.addStringOption(option =>
-			option.setName('wynik-5-mapy')
-				.setDescription('Podaj wynik w formacie X:X np 13:1')
-				.setRequired(false))
-		.addStringOption(option =>
 			option.setName('najlepszy-fragger')
 				.setDescription('Podaj nick najlepszego fraggera')
 				.setAutocomplete(true)
-				.setRequired(false))
-
+				.setRequired(true))
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
@@ -162,40 +141,11 @@ module.exports = {
 
 		const score = interaction.options.getString('wynik-meczu').split(":");
 
-		const firstMapScore = interaction.options.getString('wynik-1-mapy') ? interaction.options.getString('wynik-1-mapy').split(":") : false;
-		const secondMapScore = interaction.options.getString('wynik-2-mapy') ? interaction.options.getString('wynik-2-mapy').split(":") : false;
-		const thirdMapScore = interaction.options.getString('wynik-3-mapy') ? interaction.options.getString('wynik-3-mapy').split(":") : false;
-		const fourthMapScore = interaction.options.getString('wynik-4-mapy') ? interaction.options.getString('wynik-4-mapy').split(":") : false;
-		const fiveMapScore = interaction.options.getString('wynik-5-mapy') ? interaction.options.getString('wynik-5-mapy').split(":") : false;
-
 		const topFragger = interaction.options.getString('najlepszy-fragger') ? interaction.options.getString('najlepszy-fragger') : false;
 
 		try {
 			// Validate and parse the main score
 			var [firstScore, secondScore] = parseAndValidateScore(score);
-
-			// Validate and parse each map score
-			if (firstMapScore) {
-				var [firstMapFirstScore, firstMapSecondScore] = parseAndValidateScore(firstMapScore);
-			}
-
-			if (secondMapScore) {
-				var [secondMapFirstScore, secondMapSecondScore] = parseAndValidateScore(secondMapScore);
-			}
-
-			if (thirdMapScore) {
-				var [thirdMapFirstScore, thirdMapSecondScore] = parseAndValidateScore(thirdMapScore);
-			}
-
-			if (fourthMapScore) {
-				var [fourthMapFirstScore, fourthMapSecondScore] = parseAndValidateScore(fourthMapScore);
-			}
-
-			if (fiveMapScore) {
-				var [fiveMapFirstScore, fiveMapSecondScore] = parseAndValidateScore(fiveMapScore);
-			}
-
-
 			// Now you have all scores as numbers
 
 		} catch (error) {
@@ -271,7 +221,7 @@ module.exports = {
 			})
 		}
 
-		let predictionObject = { guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchTitle, matchScore: { firstScore, secondScore }, checked: false, mapScores: [], createdAt: Date.now() };
+		let predictionObject = { guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchTitle, matchScore: { firstScore, secondScore }, checked: false, createdAt: Date.now() };
 
 		if (firstScore > secondScore) {
 			predictionObject.predictedOutcome = "firstTeamWin";
@@ -302,22 +252,6 @@ module.exports = {
 		// 		]
 		// 	});
 		// }
-
-		if (firstMapScore) {
-			predictionObject.mapScores.push({ index: 0, firstScore: firstMapFirstScore, secondScore: firstMapSecondScore, mapGuessed: null });
-		}
-		if (secondMapScore) {
-			predictionObject.mapScores.push({ index: 1, firstScore: secondMapFirstScore, secondScore: secondMapSecondScore, mapGuessed: null });
-		}
-		if (thirdMapScore) {
-			predictionObject.mapScores.push({ index: 2, firstScore: thirdMapFirstScore, secondScore: thirdMapSecondScore, mapGuessed: null });
-		}
-		if (fourthMapScore) {
-			predictionObject.mapScores.push({ index: 3, firstScore: fourthMapFirstScore, secondScore: fourthMapSecondScore, mapGuessed: null });
-		}
-		if (fiveMapScore) {
-			predictionObject.mapScores.push({ index: 4, firstScore: fiveMapFirstScore, secondScore: fiveMapSecondScore, mapGuessed: null });
-		}
 
 		if (topFragger) {
 			predictionObject.topFragger = topFragger;

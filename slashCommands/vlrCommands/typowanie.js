@@ -57,22 +57,10 @@ module.exports = {
 
 				predictedMatch.description += `  - Obstawiony najlepszy gracz: \`${predictedMatch.topFragger || "brak"}\` ${predictedMatch.topFraggerGuessed ? `\\✅ +**1** pkt` : `\\❌ **0** pkt`}\n`
 
-				for (let i = 0; i < predictedMatch.mapScores.length; i++) {
-					predictedMatch.description += `  - Obstawiłeś mapę #${i + 1} \`${predictedMatch.mapScores[i].firstScore}:${predictedMatch.mapScores[i].secondScore}\` ${predictedMatch.mapScores[i].guessed ? `\\✅` : `\\❌`}\n`
-				}
-
-				if (predictedMatch.allMapsGuessed) {
-					predictedMatch.description += `  - \\✅ Wszystkie mapy obstawione poprawnie +**1** pkt\n`
-				}
-
 				predictedMatch.description += `  - Końcowa ilość punktów za obstawiony mecz: **${predictedMatch.points}** pkt\n\n`
 			} else {
 				predictedMatch.description += `  - Obstawiony wynik: \`${predictedMatch.matchScore.firstScore}:${predictedMatch.matchScore.secondScore}\`\n`
 				predictedMatch.description += `  - Obstawiony najlepszy gracz: \`${predictedMatch.topFragger || "brak"}\`\n`
-
-				for (let i = 0; i < predictedMatch.mapScores.length; i++) {
-					predictedMatch.description += `  - Obstawiłeś mapę #${i + 1} \`${predictedMatch.mapScores[i].firstScore}:${predictedMatch.mapScores[i].secondScore}\`\n`
-				}
 
 				predictedMatch.description += `\n`;
 			}
