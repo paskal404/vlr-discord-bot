@@ -1,6 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
-const discord = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, AttachmentBuilder} = require('discord.js');
 const settings = require("../../utils/settings.json")
 
 const { eventSchema } = require("../../models/Event")
@@ -315,7 +313,7 @@ module.exports = {
                 .setRequired(true))
 
         .setDMPermission(false)
-        .setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async autocomplete(interaction) {
         const focusedOption = interaction.options.getFocused(true);
@@ -341,7 +339,7 @@ module.exports = {
         if (!event) {
             return interaction.editReply({
                 embeds: [
-                    new discord.EmbedBuilder()
+                    new EmbedBuilder()
                         .setTitle("Sprawdzanie eventu")
                         .setColor(settings.color_red)
                         .setDescription("Nie znaleziono podanego eventu! Spróbuj ponownie wpisać komende!")
@@ -354,7 +352,7 @@ module.exports = {
         const buffer = await renderBracketGraphic(event.bracketContainers);
 		console.timeEnd("renderBracketGraphic");
 		
-        const attachment = new discord.AttachmentBuilder(Buffer.from(buffer), { compressionLevel: 9 });
+        const attachment = new AttachmentBuilder(Buffer.from(buffer), { compressionLevel: 9 });
         attachment.name = 'bracket.png';
 
         return interaction.editReply({ content: "", files: [attachment] })

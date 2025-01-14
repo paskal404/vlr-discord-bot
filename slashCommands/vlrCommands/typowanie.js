@@ -1,6 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
-const discord = require("discord.js");
 const settings = require("../../utils/settings.json")
 
 module.exports = {
@@ -10,7 +9,7 @@ module.exports = {
 		.setDescription('Pokazuje twoje typowania')
 
 		.setDMPermission(false)
-		.setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
+		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 	run: async (client, interaction) => {
 		await interaction.deferReply({ ephemeral: true });
@@ -20,7 +19,7 @@ module.exports = {
 		if (predictions.length === 0) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie posiadam żadnych informacji o twoich typowaniach, najpierw wpisz \`/typuj-mecz\` i spróbuj ponownie!")
@@ -31,7 +30,7 @@ module.exports = {
 		let page = 1;
 		const predPages = Math.ceil(predictions.length / 8);
 
-		const embed = new discord.EmbedBuilder()
+		const embed = new EmbedBuilder()
 			.setTitle("Typowanie")
 			.setColor(settings.color_green)
 			.setFooter({ text: `Strona ${page}/${predPages}` })
@@ -39,7 +38,6 @@ module.exports = {
 		let description = "Oto mecze które typujesz:\n\n";
 
 		for (const predictedMatch of predictions) {
-			// console.log(predictedMatch);
 			predictedMatch.description = "";
 
 			predictedMatch.description += `- Mecz \`${predictedMatch.matchTitle}\` (${predictedMatch.checked ? `sprawdzony` : `niesprawdzony`})\n`;
@@ -61,7 +59,6 @@ module.exports = {
 
 				for (let i = 0; i < predictedMatch.mapScores.length; i++) {
 					predictedMatch.description += `  - Obstawiłeś mapę #${i + 1} \`${predictedMatch.mapScores[i].firstScore}:${predictedMatch.mapScores[i].secondScore}\` ${predictedMatch.mapScores[i].guessed ? `\\✅` : `\\❌`}\n`
-					//predictedMatch.description += `    - \n`
 				}
 
 				if (predictedMatch.allMapsGuessed) {
@@ -79,42 +76,26 @@ module.exports = {
 
 				predictedMatch.description += `\n`;
 			}
-
-			//let predictStatus = "";
-
-			// if (predictedMatch.checked) {
-			//     predictStatus = predictedMatch.points > 0 ? `✅ (**${predictedMatch.points}** pkt) ` : `❌ (**${predictedMatch.points}** pkt) `
-			// }
-
-			// description += `- ${predictStatus}${predictedMatch.matchTitle} \`${predictedMatch.matchScore.firstScore}:${predictedMatch.matchScore.secondScore}\`\n`
-
-			// if (predictedMatch.topFragger) {
-			//     description += `  * Obstawiony najlepszy gracz: \`${predictedMatch.topFragger}\`\n`
-			// }
-
-			// for (let i = 0; i < predictedMatch.mapScores.length; i++) {
-			//     description += `  * Mapa #${i + 1} \`${predictedMatch.mapScores[i].firstScore}:${predictedMatch.mapScores[i].secondScore}\`\n`
-			// }
 		}
 
 		description += predictions.slice((page - 1) * 8, page * 8).map(predictedMatch => (
 			`${predictedMatch.description}`
 		)).join('')
 
-		const row = new discord.ActionRowBuilder()
+		const row = new ActionRowBuilder()
                 .addComponents(
-                    new discord.ButtonBuilder()
+                    new ButtonBuilder()
                         .setCustomId(`predBack`)
                         .setLabel('Poprzednia strona')
                         .setDisabled(page === 1)
-                        .setStyle(discord.ButtonStyle.Primary),
+                        .setStyle(ButtonStyle.Primary),
                 )
                 .addComponents(
-                    new discord.ButtonBuilder()
+                    new ButtonBuilder()
                         .setCustomId(`predNext`)
                         .setLabel('Nastepna strona')
                         .setDisabled(page + 1 > predPages)
-                        .setStyle(discord.ButtonStyle.Primary),
+                        .setStyle(ButtonStyle.Primary),
                 )
 
 		embed.setDescription(description);

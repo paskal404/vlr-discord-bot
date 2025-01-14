@@ -1,7 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { eventSchema } = require('../../models/Event'); // Model dla wydarzenia
 const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
-const discord = require("discord.js");
 const settings = require("../../utils/settings.json")
 
 function parseAndValidateScore(scoreArray) {
@@ -64,7 +63,7 @@ module.exports = {
 				.setRequired(false))
 
 		.setDMPermission(false)
-		.setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
+		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 	async autocomplete(interaction) {
 		const focusedOption = interaction.options.getFocused(true);
@@ -139,7 +138,7 @@ module.exports = {
 			if (!event) {
 				return interaction.editReply({
 					embeds: [
-						new discord.EmbedBuilder()
+						new EmbedBuilder()
 							.setTitle("Typowanie")
 							.setColor(settings.color_red)
 							.setDescription("Nie znaleziono podanego eventu! Spróbuj wybrać ponownie!")
@@ -153,7 +152,7 @@ module.exports = {
 		if (alreadyPredicted) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Już typujesz ten mecz")
@@ -202,7 +201,7 @@ module.exports = {
 		} catch (error) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Podaj wynik w formacie \`X:X\` np \`13:1\`")
@@ -217,7 +216,7 @@ module.exports = {
 		if (!match) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie znaleziono podanego meczu!")
@@ -228,7 +227,7 @@ module.exports = {
 		if (match.status !== "upcoming") {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie możesz typować meczu, który już się skończył, lub dopiero zaczął!")
@@ -242,7 +241,7 @@ module.exports = {
 			if (!doesPlayerExist) {
 				return interaction.editReply({
 					embeds: [
-						new discord.EmbedBuilder()
+						new EmbedBuilder()
 							.setTitle("Typowanie")
 							.setColor(settings.color_red)
 							.setDescription("Podany gracz nie bierze udziału w meczu!")
@@ -264,7 +263,7 @@ module.exports = {
 		if (Math.trunc(Date.now() / 1000) > match.status) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Obstawianie")
 						.setColor(settings.color_red)
 						.setDescription("Nie możesz obstawić meczu, który już się skończył, lub dopiero zaczął!")
@@ -285,7 +284,7 @@ module.exports = {
 		// if (firstScore < 13 && secondScore < 13) {
 		// 	return interaction.editReply({
 		// 		embeds: [
-		// 			new discord.EmbedBuilder()
+		// 			new EmbedBuilder()
 		// 				.setTitle("Typowanie")
 		// 				.setColor(settings.color_red)
 		// 				.setDescription("Wynik meczu musi mieć co najmniej 13 punktów dla jednej z drużyn!")
@@ -296,7 +295,7 @@ module.exports = {
 		// if (match.bo === "Bo1" && (firstScore < 13 && secondScore < 13)) {
 		// 	return interaction.editReply({
 		// 		embeds: [
-		// 			new discord.EmbedBuilder()
+		// 			new EmbedBuilder()
 		// 				.setTitle("Typowanie")
 		// 				.setColor(settings.color_red)
 		// 				.setDescription("Wynik meczu musi mieć co najmniej 13 punktów dla jednej z drużyn!")
@@ -328,7 +327,7 @@ module.exports = {
 
 		return interaction.editReply({
 			embeds: [
-				new discord.EmbedBuilder()
+				new EmbedBuilder()
 					.setTitle("Typowanie")
 					.setColor(settings.color_green)
 					.setDescription(`${settings.emoji_success} Pomyślnie typujesz mecz \`${match.team_one_name} vs. ${match.team_two_name}\` z wynikiem \`${interaction.options.getString('wynik-meczu')}\``)

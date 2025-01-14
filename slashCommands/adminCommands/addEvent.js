@@ -1,8 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const axios = require('axios');
 const { eventSchema } = require('../../models/Event');
 const settings = require("../../utils/settings.json");
-const discord = require("discord.js")
 
 module.exports = {
     name: "dodaj-event",
@@ -19,7 +18,7 @@ module.exports = {
                 .setRequired(true))
 
                 .setDMPermission(false)
-                .setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
+                .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     run: async (client, interaction) => {
         await interaction.deferReply({ ephemeral: true });
 

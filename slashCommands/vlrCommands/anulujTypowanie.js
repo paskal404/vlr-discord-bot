@@ -1,22 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { eventSchema } = require('../../models/Event'); // Model dla wydarzenia
 const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
-const discord = require("discord.js");
 const settings = require("../../utils/settings.json")
-
-function parseAndValidateScore(scoreArray) {
-	if (scoreArray.length !== 2) {
-		throw new Error("Score format is invalid. It should be in 'number:number' format.");
-	}
-
-	const [first, second] = scoreArray.map(Number);
-
-	if (isNaN(first) || isNaN(second)) {
-		throw new Error("Score contains invalid numbers.");
-	}
-
-	return [first, second];
-}
 
 module.exports = {
 	name: "cofnij-typowanie",
@@ -35,7 +20,7 @@ module.exports = {
 				.setRequired(true))
 
 		.setDMPermission(false)
-		.setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
+		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 	async autocomplete(interaction) {
 		const focusedOption = interaction.options.getFocused(true);
@@ -58,14 +43,6 @@ module.exports = {
 
 			let matchesAlreadyPredicted = await predictionSchema.find({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId });
 
-			// let matches = [];
-
-			// for (let i = 0; i < event.bracketContainers.length; i++) {
-			//     for (let j = 0; j < event.bracketContainers[i].matches.length; j++) {
-			//         matches.push(event.bracketContainers[i].matches[j]);
-			//     }
-			// }
-
 			interaction.respond(
 				matchesAlreadyPredicted.map(match => ({ name: `${match.matchTitle}`, value: `${match.matchTitle}` })),
 			);
@@ -87,7 +64,7 @@ module.exports = {
 			if (!event) {
 				return interaction.editReply({
 					embeds: [
-						new discord.EmbedBuilder()
+						new EmbedBuilder()
 							.setTitle("Typowanie")
 							.setColor(settings.color_red)
 							.setDescription("Nie znaleziono podanego eventu! Spróbuj wybrać ponownie!")
@@ -101,7 +78,7 @@ module.exports = {
 		if (!predictedMatch) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie typujesz tego meczu!")
@@ -116,7 +93,7 @@ module.exports = {
 		if (!match) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie znaleziono podanego meczu!")
@@ -127,7 +104,7 @@ module.exports = {
 		if (match.status !== "upcoming") {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie możesz cofnąć typowania meczu, który już się skończył, lub dopiero zaczął!")
@@ -135,20 +112,10 @@ module.exports = {
 			})
 		}
 
-		// let matches = [];
-
-		// for (let i = 0; i < event.bracketContainers.length; i++) {
-		//     for (let j = 0; j < event.bracketContainers[i].matches.length; j++) {
-		//         matches.push(event.bracketContainers[i].matches[j]);
-		//     }
-		// }
-
-		// const match = matches.find((match) => match.title === matchTitle);
-
 		if (Math.trunc(Date.now() / 1000) > match.status) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Obstawianie")
 						.setColor(settings.color_red)
 						.setDescription("Nie możesz cofnąć typowania meczu, który już się skończył, lub dopiero zaczął!")
@@ -160,7 +127,7 @@ module.exports = {
 
 		return interaction.editReply({
 			embeds: [
-				new discord.EmbedBuilder()
+				new EmbedBuilder()
 					.setTitle("Typowanie")
 					.setColor(settings.color_green)
 					.setDescription(`${settings.emoji_success} Pomyślnie cofnięto typowanie meczu **${matchTitle}**! Możesz teraz ponownie typować ten mecz!`)

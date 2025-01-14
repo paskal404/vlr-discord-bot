@@ -1,4 +1,4 @@
-const discord = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 const fs = require("node:fs");
 
 const { Routes } = require('discord-api-types/v10');
@@ -9,7 +9,7 @@ const settings = require("../../utils/settings.json");
 
 module.exports = {
     name: "reload",
-    data: new discord.SlashCommandBuilder()
+    data: new SlashCommandBuilder()
 
         .setName("reload")
         .setDescription("Komenda służąca do reloadowania assetów")
@@ -51,7 +51,7 @@ module.exports = {
         )
 
         .setDMPermission(false)
-        .setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async autocomplete(interaction) {
         const focusedOption = interaction.options.getFocused(true);
@@ -111,7 +111,7 @@ module.exports = {
 
             interaction.editReply({
                 embeds: [
-                    new discord.EmbedBuilder()
+                    new EmbedBuilder()
                         .setTitle("Eventy zostały przeładowane")
                         .setDescription(`${settings.emoji_success} Pomyślnie przeładowano wszystkie eventy w ${diff}ms`)
                         .setColor(settings.color_green)
@@ -133,7 +133,7 @@ module.exports = {
 
             interaction.editReply({
                 embeds: [
-                    new discord.EmbedBuilder()
+                    new EmbedBuilder()
                         .setTitle("Schematy zostały przeładowane")
                         .setDescription(`${settings.emoji_success} Pomyślnie przeładowano schematy w ${diff}ms`)
                         .setColor(settings.color_green)
@@ -161,7 +161,7 @@ module.exports = {
 
             interaction.editReply({
                 embeds: [
-                    new discord.EmbedBuilder()
+                    new EmbedBuilder()
                         .setTitle("Komendy zostały przeładowane")
                         .setDescription(`${settings.emoji_success} Pomyślnie przeładowano wszystkie komendy w ${diff}ms`)
                         .setColor(settings.color_green)
@@ -192,7 +192,7 @@ module.exports = {
 
             interaction.editReply({
                 embeds: [
-                    new discord.EmbedBuilder()
+                    new EmbedBuilder()
                         .setTitle("Komendy slash zostały przeładowane")
                         .setDescription(`${settings.emoji_success} Pomyślnie przeładowano wszystkie komendy slash w ${diff}ms`)
                         .setColor(settings.color_green)
@@ -208,7 +208,7 @@ module.exports = {
 
             interaction.editReply({
                 embeds: [
-                    new discord.EmbedBuilder()
+                    new EmbedBuilder()
                         .setTitle("Plik został przeładowany")
                         .setDescription(`${settings.emoji_success} Pomyślnie przeładowano plik \`${fileName}\` w ${diff}ms`)
                         .setColor(settings.color_green)

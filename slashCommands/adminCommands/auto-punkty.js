@@ -1,8 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const discord = require("discord.js");
-const moment = require("moment-timezone");
-
-const { predictionSchema } = require("../../models/Prediction");
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { autoPointsSchema } = require("../../models/autoPoints.js");
 const autoPoints = require("../../utils/autoPoints.js")
 
@@ -29,11 +25,11 @@ module.exports = {
                 .addChannelOption(option => option
                     .setName('kanał')
                     .setDescription("Podaj kanał, na którym mają się odświeżać punkty")
-                    .addChannelTypes(discord.ChannelType.GuildText)
+                    .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)))
 
         .setDMPermission(false)
-        .setDefaultMemberPermissions(discord.PermissionFlagsBits.Administrator),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     run: async (client, interaction) => {
         try {
