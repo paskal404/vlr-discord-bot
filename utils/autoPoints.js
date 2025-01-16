@@ -65,32 +65,46 @@ const indexPrefix = {
     4: `**5.**`,
 };
 
-function objectCalculator(object, type) {
+async function objectCalculator(guild, object, type) {
     let response = "";
 
     if (object.userId) {
-        response = `<@${object.userId}>`
+		let member;
+		
+		try {
+			member = await guild.members.fetch(object.userId);
+		} catch(err){
+			
+		}
+
+		if (member) {
+			member = member.user.username;
+		} else {
+			member = member.id;
+		}
+
+        response = `\`${member}\``;
     }
 
     // response += ` ${settings.emoji_arrow_animated} `;
 
     if (type == "points") {
-        response += ` **${numberWithCommas(object.points)}** ${odmiana(object.points, "punkt", "punkty", "punktów")}`;
+        response += ` - **${numberWithCommas(object.points)}** ${odmiana(object.points, "punkt", "punkty", "punktów")}`;
     }
 
     return response;
 }
 
-function statisticsDescription({ guild, slicedSchemaResponse, timestamp, type, link, title, reward, timeType }) {
+async function statisticsDescription({ guild, slicedSchemaResponse, timestamp, type, link, title, reward, timeType }) {
     let description = "";
 
     for (let i = 0; i < 5; i++) {
         const lineStartText = indexPrefix[i];
 
         if (slicedSchemaResponse[i]) {
-            const object = objectCalculator(slicedSchemaResponse[i], type);
+            const object = await objectCalculator(guild, slicedSchemaResponse[i], type);
 
-            description += `${lineStartText} ${object}\n${i == 0 ? `\n` : ``}`;
+            description += `${lineStartText} ${object} \n${i == 0 ? `\n` : ``}`;
         } else {
             description += `${lineStartText} ―\n`;
         }
@@ -136,7 +150,7 @@ module.exports.calculateWeeklyPredictionPoints = async (guild, date) => {
 
     const slicedSchemaResponse = topPredictionUsers(schemaResponse).slice(0, 5);
 
-    let newMessage = statisticsDescription({
+    let newMessage = await statisticsDescription({
         guild,
         slicedSchemaResponse,
         timestamp: polishTimestampOfEndOfTheWeek,
@@ -176,7 +190,7 @@ module.exports.updateWeeklyPredictionStatistics = async (guild, channel, message
         const subtractedDate = moment().tz('Europe/Warsaw').subtract(1, "day").format("YYYY-MM-DD");
         const lastDate = moment.tz(`${subtractedDate} 12:00:00`, `Europe/Warsaw`);
 
-        const oldResponse = await this.calculateDailyPredictionStatistics(guild, lastDate);
+        const oldResponse = await this.calculateWeeklyPredictionPoints(guild, lastDate);
 
         if (oldResponse.slicedSchema) {
             for (let i = 0; i < oldResponse.slicedSchema.length; i++) {

@@ -46,16 +46,16 @@ module.exports = {
 				let predictedScore;
 
 				if (predictedMatch.predictedOutcomeGuessed === "false") {
-					predictedScore = `\\❌ **0** pkt`
+					predictedScore = `${settings.emoji_wrong2} **0** pkt`
 				} else if (predictedMatch.predictedOutcomeGuessed === "onlyWinnerTeam") {
-					predictedScore = `\\✅ +**1** pkt`
+					predictedScore = `${settings.emoji_checkmark2} +**1** pkt`
 				} else if (predictedMatch.predictedOutcomeGuessed === "wholeScore") {
-					predictedScore = `\\✅ +**2** pkt`
+					predictedScore = `${settings.emoji_checkmark2} +**2** pkt`
 				}
 
 				predictedMatch.description += `  - Obstawiony wynik: \`${predictedMatch.matchScore.firstScore}:${predictedMatch.matchScore.secondScore}\` ${predictedScore}\n`
 
-				predictedMatch.description += `  - Obstawiony najlepszy gracz: \`${predictedMatch.topFragger || "brak"}\` ${predictedMatch.topFraggerGuessed ? `\\✅ +**1** pkt` : `\\❌ **0** pkt`}\n`
+				predictedMatch.description += `  - Obstawiony najlepszy gracz: \`${predictedMatch.topFragger || "brak"}\` ${predictedMatch.topFraggerGuessed ? `${settings.emoji_checkmark2} +**1** pkt` : `${settings.emoji_wrong2} **0** pkt`}\n`
 
 				predictedMatch.description += `  - Końcowa ilość punktów za obstawiony mecz: **${predictedMatch.points}** pkt\n\n`
 			} else {
