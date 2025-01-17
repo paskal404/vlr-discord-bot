@@ -153,7 +153,7 @@ module.exports.calculateWeeklyPredictionPoints = async (guild, date) => {
 
     const schemaResponse = await predictionSchema.find({ guildId: guild.id, checkedAt: { $gte: fromBeginningToStartOfTheWeek } });
 
-    const slicedSchemaResponse = topPredictionUsers(schemaResponse).slice(0, 5);
+    const slicedSchemaResponse = topPredictionUsers(schemaResponse).slice(0, 10);
 
     let newMessage = await statisticsDescription({
         guild,
