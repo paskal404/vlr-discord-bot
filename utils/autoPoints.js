@@ -63,6 +63,11 @@ const indexPrefix = {
     2: `**3.**`,
     3: `**4.**`,
     4: `**5.**`,
+    5: `**6.**`,
+    6: `**7.**`,
+    7: `**8.**`,
+    8: `**9.**`,
+    9: `**10.**`,
 };
 
 async function objectCalculator(guild, object, type) {
@@ -98,7 +103,7 @@ async function objectCalculator(guild, object, type) {
 async function statisticsDescription({ guild, slicedSchemaResponse, timestamp, type, link, title, reward, timeType }) {
     let description = "";
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
         const lineStartText = indexPrefix[i];
 
         if (slicedSchemaResponse[i]) {
