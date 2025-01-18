@@ -15,8 +15,9 @@ module.exports = {
 
             const refreshTime = Date.now() + 1000 * 60 * 5;
 
-            if (guildAutoStatistics.topPointsChannelId !== "0" /*&& Date.now() > guildAutoStatistics.topChatRefresh*/) {
+            if (guildAutoStatistics.topPointsChannelId !== "0" && Date.now() > guildAutoStatistics.topPointsRefresh) {
                 autoPoints.updateWeeklyPredictionStatistics(guild, topPointsChannel, guildAutoStatistics.topWeeklyPointsMessageId);
+                autoPoints.updateAllTimePredictionStatistics(guild, topPointsChannel, guildAutoStatistics.topWeeklyPointsMessageId);
                 await autoPointsSchema.updateOne({ guildId: guild.id, topPointsRefresh: refreshTime });
             }
         }

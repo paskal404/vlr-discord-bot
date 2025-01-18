@@ -121,7 +121,7 @@ async function statisticsDescription({ guild, slicedSchemaResponse, timestamp, t
     //     description += `test\n`;
     // }
 
-    description += `\nResetuje się <t:${timestamp}:R>`;
+    if (timeType != "allTime") description += `\nResetuje się <t:${timestamp}:R>`;
 
     let embed = new discord.EmbedBuilder()
         .setColor(settings.color_light_blue)
@@ -161,7 +161,7 @@ module.exports.calculateWeeklyPredictionPoints = async (guild, date) => {
         timestamp: polishTimestampOfEndOfTheWeek,
         type: "points",
         //link: "https://ptb.discord.com/channels/785823704805802014/834118201431425034",
-        title: "Statystyki typowania",
+        title: "Statystyki tygodniowe typowania",
         //reward: "**1x Skrzynka zwykła** do !eq",
         timeType: "weekly"
     });
@@ -247,5 +247,62 @@ module.exports.updateWeeklyPredictionStatistics = async (guild, channel, message
         await message.edit(response.newMessage);
     } catch (err) {
         console.log(`ERROR autoStatistics.js -> nie można zedytować auto-wiadomości WEEKLY POINTS`)
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////  STATYSTYKI PUNKTOWE  /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+module.exports.calculateAllTimePredictionPoints = async (guild, date) => {
+    const schemaResponse = await predictionSchema.find({ guildId: guild.id });
+
+    const slicedSchemaResponse = topPredictionUsers(schemaResponse).slice(0, 10);
+
+    let newMessage = await statisticsDescription({
+        guild,
+        slicedSchemaResponse,
+        timestamp: 0,
+        type: "points",
+        //link: "https://ptb.discord.com/channels/785823704805802014/834118201431425034",
+        title: "Statystyki ogólne typowania",
+        //reward: "**1x Skrzynka zwykła** do !eq",
+        timeType: "allTime"
+    });
+
+    return {
+        newMessage,
+        slicedSchema: slicedSchemaResponse,
+    }
+}
+
+module.exports.sendAllTimePredictionStatistics = async (guild, channel) => {
+    const date = moment().tz('Europe/Warsaw');
+
+    const response = await this.calculateAllTimePredictionPoints(guild, date);
+
+    const msg = await channel.send(response.newMessage);
+
+    await autoPointsSchema.updateOne({ guildId: guild.id }, { topAllTimePointsMessageId: msg.id });
+}
+
+module.exports.updateAllTimePredictionStatistics = async (guild, channel, messageId) => {
+    const date = moment().tz('Europe/Warsaw');
+
+    const response = await this.calculateAllTimePredictionPoints(guild, date);
+
+    let message;
+
+    try {
+        message = await channel.messages.fetch(messageId);
+    } catch (err) {
+        console.log(`ERROR autoStatistics.js -> nie znaleziono auto-wiadomości do fetchowania, odnawianie statystyk ALLTIME POINTS`)
+        await this.sendAllTimePredictionStatistics(guild, channel);
+    }
+
+    try {
+        await message.edit(response.newMessage);
+    } catch (err) {
+        console.log(`ERROR autoStatistics.js -> nie można zedytować auto-wiadomości ALLTIME POINTS`)
     }
 }

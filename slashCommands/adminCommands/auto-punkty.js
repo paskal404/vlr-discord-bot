@@ -33,6 +33,8 @@ module.exports = {
 
     run: async (client, interaction) => {
         try {
+			await interaction.deferReply({ ephemeral: true });
+
             const subCommand = interaction.options.getSubcommand()
 
             const guild = interaction.guild;
@@ -68,9 +70,10 @@ module.exports = {
 
                 await autoPointsSchema.updateOne({ guildId: guild.id }, { topPointsChannelId: channel.id }, { upsert: true });
 
+				await autoPoints.sendAllTimePredictionStatistics(guild, channel);
                 await autoPoints.sendWeeklyPredictionStatistics(guild, channel);
 
-                return interaction.reply({ content: "Pomyślnie skonfigurowano!", ephemeral: true, });
+                return interaction.editReply({ content: "Pomyślnie skonfigurowano!", ephemeral: true, });
             }
         } catch (err) {
             console.log(err)

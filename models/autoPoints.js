@@ -11,8 +11,11 @@ const autoPointsSchema = new mongoose.Schema({
 
     topPointsChannelId: reqString,
     topPointsRefresh: reqString,
+
     topWeeklyPointsMessageId: reqString,
     topWeeklyPointsRewardTimestamp: reqString,
+
+	topAllTimePointsMessageId: reqString,
 });
 
 module.exports.autoPointsSchema = mongoose.model("autoPoints", autoPointsSchema)
