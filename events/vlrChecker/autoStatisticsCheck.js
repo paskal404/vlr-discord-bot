@@ -17,7 +17,7 @@ module.exports = {
 
             if (guildAutoStatistics.topPointsChannelId !== "0" && Date.now() > guildAutoStatistics.topPointsRefresh) {
                 autoPoints.updateWeeklyPredictionStatistics(guild, topPointsChannel, guildAutoStatistics.topWeeklyPointsMessageId);
-                autoPoints.updateAllTimePredictionStatistics(guild, topPointsChannel, guildAutoStatistics.topWeeklyPointsMessageId);
+                autoPoints.updateAllTimePredictionStatistics(guild, topPointsChannel, guildAutoStatistics.topAllTimePointsMessageId);
                 await autoPointsSchema.updateOne({ guildId: guild.id, topPointsRefresh: refreshTime });
             }
         }
