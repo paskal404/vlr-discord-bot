@@ -1,7 +1,9 @@
-const { SlashCommandBuilder } = require('discord.js');
 const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
-const discord = require("discord.js");
+const { eventSchema } = require("../../models/Event")
+const { EmbedBuilder, ButtonStyle, ActionRowBuilder, ButtonBuilder } = require("discord.js");
 const settings = require("../../utils/settings.json")
+
+const pagination = require("../../utils/pagination");
 
 module.exports = {
 	name: 'interactionCreate',
@@ -23,13 +25,14 @@ module.exports = {
 		const [current_page, total_pages] = footer_page.split("/").map(Number);
 		const page = customId === 'predNext' ? current_page + 1 : current_page - 1;
 
-		const predictions = await predictionSchema.find({ guildId: guild.id, userId: member.id });
-		const predPages = Math.ceil(predictions.length / 8);
+		const events = await eventSchema.find({ guildId: guild.id });
+		let predictions = await predictionSchema.find({ guildId: guild.id, userId: member.id }).lean()
+		const predictionPages = Math.ceil(predictions.length / 8);
 
-		if (predPages === 0) {
+		if (predictionPages === 0) {
 			return interaction.editReply({
 				embeds: [
-					new discord.EmbedBuilder()
+					new EmbedBuilder()
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie posiadam żadnych informacji o twoich typowaniach, najpierw wpisz \`/typuj-mecz\` i spróbuj ponownie!")
@@ -37,80 +40,30 @@ module.exports = {
 			});
 		}
 
-		let description = "Oto mecze które typujesz:\n\n";
+		const paginationData = await pagination.getPagination(predictions, events, page, predictionPages);
 
-		for (const predictedMatch of predictions) {
-			// console.log(predictedMatch);
-			predictedMatch.description = "";
-
-			predictedMatch.description += `- Mecz \`${predictedMatch.matchTitle}\` (${predictedMatch.checked ? `sprawdzony` : `niesprawdzony`})\n`;
-
-			if (predictedMatch.checked) {
-				let predictedScore;
-
-				if (predictedMatch.predictedOutcomeGuessed === "false") {
-					predictedScore = `${settings.emoji_wrong2} **0** pkt`
-				} else if (predictedMatch.predictedOutcomeGuessed === "onlyWinnerTeam") {
-					predictedScore = `${settings.emoji_checkmark2} +**1** pkt`
-				} else if (predictedMatch.predictedOutcomeGuessed === "wholeScore") {
-					predictedScore = `${settings.emoji_checkmark2} +**2** pkt`
-				}
-
-				predictedMatch.description += `  - Obstawiony wynik: \`${predictedMatch.matchScore.firstScore}:${predictedMatch.matchScore.secondScore}\` ${predictedScore}\n`
-
-				predictedMatch.description += `  - Obstawiony najlepszy gracz: \`${predictedMatch.topFragger}\` ${predictedMatch.topFraggerGuessed ? `${settings.emoji_checkmark2} +**1** pkt` : `${settings.emoji_wrong2} **0** pkt`}\n`
-
-				predictedMatch.description += `  - Końcowa ilość punktów za obstawiony mecz: **${predictedMatch.points}** pkt\n\n`
-			} else {
-				predictedMatch.description += `  - Obstawiony wynik: \`${predictedMatch.matchScore.firstScore}:${predictedMatch.matchScore.secondScore}\`\n`
-				predictedMatch.description += `  - Obstawiony najlepszy gracz: \`${predictedMatch.topFragger}\`\n`
-
-				predictedMatch.description += `\n`;
-			}
-
-			//let predictStatus = "";
-
-			// if (predictedMatch.checked) {
-			//     predictStatus = predictedMatch.points > 0 ? `✅ (**${predictedMatch.points}** pkt) ` : `❌ (**${predictedMatch.points}** pkt) `
-			// }
-
-			// description += `- ${predictStatus}${predictedMatch.matchTitle} \`${predictedMatch.matchScore.firstScore}:${predictedMatch.matchScore.secondScore}\`\n`
-
-			// if (predictedMatch.topFragger) {
-			//     description += `  * Obstawiony najlepszy gracz: \`${predictedMatch.topFragger}\`\n`
-			// }
-
-			// for (let i = 0; i < predictedMatch.mapScores.length; i++) {
-			//     description += `  * Mapa #${i + 1} \`${predictedMatch.mapScores[i].firstScore}:${predictedMatch.mapScores[i].secondScore}\`\n`
-			// }
-		}
-
-		description += predictions.slice((page - 1) * 8, page * 8).map(predictedMatch => (
-			`${predictedMatch.description}`
-		)).join('')
-
-		const embed = new discord.EmbedBuilder()
+		const embed = new EmbedBuilder()
 			.setColor(settings.color_green)
 			.setTitle("Typowanie")
-			.setFooter({ text: `Strona ${page}/${predPages}` })
-			.setDescription(description);
+			.setFooter({ text: `Strona ${page}/${predictionPages}` })
+			.setDescription(paginationData);
 
 		await interaction.followUp({
 			ephemeral: true,
 			embeds: [embed.data],
 			components: [
-				new discord.ActionRowBuilder()
+				new ActionRowBuilder()
 					.addComponents(
-						new discord.ButtonBuilder()
+						new ButtonBuilder()
 							.setCustomId(`predBack`)
 							.setLabel('Poprzednia strona')
 							.setDisabled(page === 1)
-							.setStyle(discord.ButtonStyle.Primary),
-						new discord.ButtonBuilder()
+							.setStyle(ButtonStyle.Primary),
+						new ButtonBuilder()
 							.setCustomId(`predNext`)
 							.setLabel('Nastepna strona')
-							.setDisabled(page >= predPages)
-							.setStyle(discord.ButtonStyle.Primary)
+							.setDisabled(page >= predictionPages)
+							.setStyle(ButtonStyle.Primary)
 					)
 			]
 		});
