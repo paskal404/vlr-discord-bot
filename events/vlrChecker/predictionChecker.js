@@ -17,7 +17,7 @@ module.exports = {
                     continue;
                 }
 
-                const match = event.matches.find((match) => predictionDoc.matchTitle === `${match.team_one_name} vs. ${match.team_two_name}` && match.status === "final");
+                const match = event.matches.find((match) => predictionDoc.matchId === match.matchId && match.status === "final");
                 if (!match) {
                     continue;
                 }   

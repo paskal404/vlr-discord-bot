@@ -5,6 +5,9 @@ const predictionSchema = new mongoose.Schema({
     userId: { type: String, required: true },
     eventId: { type: String, required: true },
     matchTitle: { type: String, required: true },
+
+	matchId: { type: String, required: true },
+
     points: { type: Number, default: 0, required: true },
     matchScore: {
         firstScore: {

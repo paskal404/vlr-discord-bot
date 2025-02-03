@@ -17,7 +17,7 @@ module.exports.getPagination = async (predictions, events, page, predictionPages
 		const event = events.find(event => event.eventId === predictedMatch.eventId);
 		if (!event) continue;
 
-		const match = event.matches.find(match => predictedMatch.matchTitle == `${match.team_one_name} vs. ${match.team_two_name}`);
+		const match = event.matches.find(match => predictedMatch.matchId == match.matchId);
 		if (!match) continue;
 
 		let matchTimestamp;

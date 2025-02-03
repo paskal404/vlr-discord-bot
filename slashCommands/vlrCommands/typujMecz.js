@@ -57,57 +57,53 @@ module.exports = {
 			);
 
 			return;
-		} else if (focusedOption.name === 'najlepszy-fragger') {
-			const eventId = interaction.options.getString("event");
-			const matchName = interaction.options.getString("mecz").replace(/\(bo\d+\)/i, '').trim();
-
-			let event = await eventSchema.findOne({ guildId: interaction.guild.id, $or: [{ eventId }, { name: eventId }] });
-			if (!event) return;
-
-			let match = event.matches.find(eventMatch => `${eventMatch.team_one_name} vs. ${eventMatch.team_two_name}` === matchName);
-
-			const allPlayers = match.team_one_players.concat(match.team_two_players).map(player => player.player_name);
-
-			interaction.respond(
-				allPlayers.map(player => ({ name: player, value: player })),
-			);
-
-			return;
-
 		} else if (focusedOption.name === 'mecz') {
 			const eventId = interaction.options.getString("event");
 
 			let event = await eventSchema.findOne({ guildId: interaction.guild.id, $or: [{ eventId }, { name: eventId }] });
 			if (!event) return;
 
-			const unavailableMatches = event.matches.filter(match => match.status !== "upcoming").map(match => `${match.team_one_name} vs. ${match.team_two_name}`);
+			const unavailableMatches = event.matches.filter(match => match.status !== "upcoming").map(match => match.matchId);
 			let matchesAlreadyPredicted = await predictionSchema.find({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId });
-			matchesAlreadyPredicted = matchesAlreadyPredicted.map(match => match.matchTitle);
+			matchesAlreadyPredicted = matchesAlreadyPredicted.map(match => match.matchId);
 
-			const matches = event.matches.filter(match => !unavailableMatches.includes(`${match.team_one_name} vs. ${match.team_two_name}`) && !matchesAlreadyPredicted.includes(`${match.team_one_name} vs. ${match.team_two_name}`));
+			const matches = event.matches.filter(match => !unavailableMatches.includes(match.matchId) && !matchesAlreadyPredicted.includes(match.matchId));
 
-			// let matches = [];
-
-			// for (let i = 0; i < event.bracketContainers.length; i++) {
-			//     for (let j = 0; j < event.bracketContainers[i].matches.length; j++) {
-			//         matches.push(event.bracketContainers[i].matches[j]);
-			//     }
-			// }
-
-			const filtered = matches.filter(match => `${match.team_one_name} vs. ${match.team_two_name}`.startsWith(focusedOption.value) && !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD"));
+			const filtered = matches.filter(match => match.matchId.startsWith(focusedOption.value) && !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD"));
 
 			interaction.respond(
-				filtered.map(match => ({ name: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo})`, value: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo})` })),
+				filtered.map(match => ({ name: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`, value: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]` })),
 			);
 
 			return;
+		} else if (focusedOption.name === 'najlepszy-fragger') {
+			const eventId = interaction.options.getString("event");
+			const matchName = interaction.options.getString("mecz").replace(/\(bo\d+\)/i, '').trim();
+			const matchId = interaction.options.getString("mecz").match(/\[(.*?)\]/)[1];
+
+			let event = await eventSchema.findOne({ guildId: interaction.guild.id, $or: [{ eventId }, { name: eventId }] });
+			if (!event) return;
+
+			let match = event.matches.find(eventMatch => eventMatch.matchId === matchId);
+			if (!match) {
+				throw new Error("Match not found");
+			}
+
+			const allPlayers = match.team_one_players.concat(match.team_two_players).map(player => player.player_name);
+
+			interaction.respond(
+				allPlayers.map(player => ({ name: player, value: player })),
+			);
 		}
+			return;
+
 	},
 	run: async (client, interaction) => {
 		await interaction.deferReply({ ephemeral: true });
 
 		const eventId = interaction.options.getString('event');
-		const matchTitle = interaction.options.getString('mecz').replace(/\(bo\d+\)/i, '').trim();
+		const matchTitle = interaction.options.getString('mecz').replace(/\(bo\d+\)/i, '').replace(/\[.*?\]/, '').trim();
+		const matchId = interaction.options.getString("mecz").match(/\[(.*?)\]/)[1];
 
 		let event = await eventSchema.findOne({ guildId: interaction.guild.id, eventId });
 
@@ -126,7 +122,7 @@ module.exports = {
 			}
 		}
 
-		const alreadyPredicted = await predictionSchema.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchTitle });
+		const alreadyPredicted = await predictionSchema.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchId });
 
 		if (alreadyPredicted) {
 			return interaction.editReply({
@@ -161,7 +157,7 @@ module.exports = {
 
 		const matches = event.matches;
 
-		const match = matches.find((match) => `${match.team_one_name} vs. ${match.team_two_name}` === matchTitle);
+		const match = matches.find((match) => match.matchId === matchId);
 
 		if (!match) {
 			return interaction.editReply({
@@ -221,7 +217,7 @@ module.exports = {
 			})
 		}
 
-		let predictionObject = { guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchTitle, matchScore: { firstScore, secondScore }, checked: false, createdAt: Date.now() };
+		let predictionObject = { guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchTitle, matchId, matchScore: { firstScore, secondScore }, checked: false, createdAt: Date.now() };
 
 		if (firstScore > secondScore) {
 			predictionObject.predictedOutcome = "firstTeamWin";
