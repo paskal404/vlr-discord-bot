@@ -72,7 +72,7 @@ module.exports = {
         }
 
         checkServers();
-        const newInterval = setInterval(checkServers, 1000 * 5);
+        const newInterval = setInterval(checkServers, 1000 * 60);
         client.readyIntervals.push(newInterval);
 
     },

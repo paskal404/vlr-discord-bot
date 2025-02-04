@@ -44,7 +44,7 @@ module.exports = {
 			let matchesAlreadyPredicted = await predictionSchema.find({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId });
 
 			interaction.respond(
-				matchesAlreadyPredicted.map(match => ({ name: `${match.matchTitle}`, value: `${match.matchTitle}` })),
+				matchesAlreadyPredicted.map(match => ({ name: `${match.matchTitle} [${match.matchId}]`, value: `${match.matchTitle} [${match.matchId}]` })),
 			);
 
 			return;
@@ -54,7 +54,8 @@ module.exports = {
 		await interaction.deferReply({ ephemeral: true });
 
 		const eventId = interaction.options.getString('event');
-		const matchTitle = interaction.options.getString('mecz').replace(/\(bo\d+\)/i, '').trim();
+		const matchTitle = interaction.options.getString('mecz').replace(/\(bo\d+\)/i, '').replace(/\[.*?\]/, '').trim();
+		const matchId = interaction.options.getString("mecz").match(/\[(.*?)\]/)[1];
 
 		let event = await eventSchema.findOne({ guildId: interaction.guild.id, eventId });
 
@@ -73,7 +74,7 @@ module.exports = {
 			}
 		}
 
-		const predictedMatch = await predictionSchema.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchTitle });
+		const predictedMatch = await predictionSchema.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, matchId });
 
 		if (!predictedMatch) {
 			return interaction.editReply({
@@ -88,7 +89,7 @@ module.exports = {
 
 		const matches = event.matches;
 
-		const match = matches.find((match) => `${match.team_one_name} vs. ${match.team_two_name}` === matchTitle);
+		const match = matches.find((match) => match.matchId === matchId);
 
 		if (!match) {
 			return interaction.editReply({
