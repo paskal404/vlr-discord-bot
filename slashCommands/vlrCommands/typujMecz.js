@@ -69,7 +69,7 @@ module.exports = {
 
 			const matches = event.matches.filter(match => !unavailableMatches.includes(match.matchId) && !matchesAlreadyPredicted.includes(match.matchId));
 
-			const filtered = matches.filter(match => match.matchId.startsWith(focusedOption.value) && !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD"));
+			const filtered = matches.filter(match => match.matchId.startsWith(focusedOption.value) && !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD") && match.matchId !== "86470");
 
 			interaction.respond(
 				filtered.map(match => ({ name: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`, value: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]` })),
@@ -166,6 +166,17 @@ module.exports = {
 						.setTitle("Typowanie")
 						.setColor(settings.color_red)
 						.setDescription("Nie znaleziono podanego meczu!")
+				]
+			})
+		}
+
+		if (match.matchId === "86470") {
+			return interaction.editReply({
+				embeds: [
+					new EmbedBuilder()
+						.setTitle("Typowanie")
+						.setColor(settings.color_red)
+						.setDescription("Tego meczu nie można obstawić!")
 				]
 			})
 		}

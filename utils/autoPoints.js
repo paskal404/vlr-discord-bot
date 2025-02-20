@@ -85,7 +85,7 @@ async function objectCalculator(guild, object, type) {
 		if (member) {
 			member = member.user.username;
 		} else {
-			member = member.id;
+			member = object.userId
 		}
 
         response = `\`${member}\``;
@@ -255,7 +255,7 @@ module.exports.updateWeeklyPredictionStatistics = async (guild, channel, message
 ///////////////////////////////////////////////////////////////////////////////////
 
 module.exports.calculateAllTimePredictionPoints = async (guild, date) => {
-    const schemaResponse = await predictionSchema.find({ guildId: guild.id });
+    const schemaResponse = await predictionSchema.find({ guildId: guild.id, createdAt: { $gte: 1739736655000 } });
 
     const slicedSchemaResponse = topPredictionUsers(schemaResponse).slice(0, 10);
 
