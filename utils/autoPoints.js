@@ -228,7 +228,7 @@ module.exports.updateWeeklyPredictionStatistics = async (guild, channel, message
                                 new discord.EmbedBuilder()
                                     .setTitle("Typowanie")
                                     .setDescription(`<@${member.id}> zajął ${i + 1} miejsce w **top typowania tygodnia**`)
-                                    .setColor(settings.color_dark_purple)
+                                    .setColor(settings.color_light_blue)
 
                             ],
                         });
