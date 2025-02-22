@@ -1,5 +1,3 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, AttachmentBuilder} = require('discord.js');
-const settings = require("../../utils/settings.json")
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, AttachmentBuilder } = require('discord.js');
 const settings = require("../../utils/config.json")
 
