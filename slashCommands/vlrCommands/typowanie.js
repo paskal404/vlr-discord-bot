@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection } = require('discord.js');
 const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
 const { eventSchema } = require("../../models/Event")
-const settings = require("../../utils/settings.json")
+const settings = require("../../utils/config.json")
 const pagination = require("../../utils/pagination");
 
 module.exports = {

@@ -1,5 +1,5 @@
 const moment = require("moment-timezone");
-const settings = require("./settings.json");
+const settings = require("./config.json");
 
 const weekTimestamps = {
 	"Playoffs": "1740628800",

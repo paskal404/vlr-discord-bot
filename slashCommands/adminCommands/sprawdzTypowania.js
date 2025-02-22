@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const settings = require("../../utils/settings.json");
+const settings = require("../../utils/config.json");
 
 const { predictionSchema } = require('../../models/Prediction');
 

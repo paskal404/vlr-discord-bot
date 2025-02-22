@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { eventSchema } = require('../../models/Event'); // Model dla wydarzenia
 const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
-const settings = require("../../utils/settings.json")
+const settings = require("../../utils/config.json")
 
 function parseAndValidateScore(scoreArray) {
 	if (scoreArray.length !== 2) {

@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const axios = require('axios');
 const { eventSchema } = require('../../models/Event');
-const settings = require("../../utils/settings.json");
+const settings = require("../../utils/config.json");
 
 module.exports = {
     name: "dodaj-event",

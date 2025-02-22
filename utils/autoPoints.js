@@ -1,7 +1,7 @@
 const { predictionSchema } = require("../models/Prediction");
 const { autoPointsSchema } = require("../models/autoPoints.js");
 
-const settings = require('./settings.json');
+const settings = require('./config.json');
 const discord = require("discord.js");
 const moment = require("moment-timezone");
 

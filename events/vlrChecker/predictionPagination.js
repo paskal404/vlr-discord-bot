@@ -1,7 +1,7 @@
 const { predictionSchema } = require('../../models/Prediction'); // Model dla wydarzenia
 const { eventSchema } = require("../../models/Event")
 const { EmbedBuilder, ButtonStyle, ActionRowBuilder, ButtonBuilder } = require("discord.js");
-const settings = require("../../utils/settings.json")
+const settings = require("../../utils/config.json")
 
 const pagination = require("../../utils/pagination");
 

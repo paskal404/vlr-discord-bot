@@ -5,7 +5,7 @@ const { Routes } = require('discord-api-types/v10');
 
 const mongoose = require("mongoose")
 
-const settings = require("../../utils/settings.json");
+const settings = require("../../utils/config.json");
 
 module.exports = {
     name: "reload",
