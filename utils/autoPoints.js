@@ -44,15 +44,18 @@ function topPredictionUsers(response) {
 }
 
 function momentCalculateWeekly(date) {
-    const momentWeekStart = date.startOf('isoWeek');
+    const resetDay = settings.weeklyResetDay !== undefined ? settings.weeklyResetDay : 1; // Default to Monday
+    const currentDay = date.day(); // Current day of week (0-6)
+    
+    // Calculate days to subtract to reach last reset day
+    let diff = currentDay - resetDay;
+    if (diff < 0) diff += 7;
+    
+    const momentWeekStart = date.clone().subtract(diff, 'days').startOf('day');
+    const formattedWeekEnd = momentWeekStart.clone().add(7, 'days').format("YYYY-MM-DD");
 
-    const formattedWeekStart = momentWeekStart.format("YYYY-MM-DD");
-    const formattedWeekEnd = momentWeekStart.add(7, "days").format("YYYY-MM-DD");
-
-    //const polishTimestampOfStartOfTheWeek = moment.tz(`${formattedWeekStart} 00:00:00`, `Europe/Warsaw`).unix();
     const polishTimestampOfEndOfTheWeek = moment.tz(`${formattedWeekEnd} 00:00:00`, `Europe/Warsaw`).unix();
-
-    const fromBeginningToStartOfTheWeek = moment(`${formattedWeekStart} 00:00:00`).unix();
+    const fromBeginningToStartOfTheWeek = momentWeekStart.unix();
 
     return { fromBeginningToStartOfTheWeek, polishTimestampOfEndOfTheWeek };
 }
@@ -189,8 +192,11 @@ module.exports.updateWeeklyPredictionStatistics = async (guild, channel, message
     const response = await this.calculateWeeklyPredictionPoints(guild, date);
 
     const { topWeeklyPointsRewardTimestamp } = await autoPointsSchema.findOneAndUpdate({ guildId: guild.id }, { topWeeklyPointsRewardTimestamp: response.polishTimestampOfEndOfTheWeek });
+    // let { topWeeklyPointsRewardTimestamp } = await autoPointsSchema.findOne({ guildId: guild.id });
 
     if (topWeeklyPointsRewardTimestamp != "0" && response.polishTimestampOfEndOfTheWeek > topWeeklyPointsRewardTimestamp) {
+
+		// await autoPointsSchema.findOneAndUpdate({ guildId: guild.id }, { topWeeklyPointsRewardTimestamp: response.polishTimestampOfEndOfTheWeek });
 
         const subtractedDate = moment().tz('Europe/Warsaw').subtract(1, "day").format("YYYY-MM-DD");
         const lastDate = moment.tz(`${subtractedDate} 12:00:00`, `Europe/Warsaw`);
