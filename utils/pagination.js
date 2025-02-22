@@ -2,10 +2,12 @@ const moment = require("moment-timezone");
 const settings = require("./settings.json");
 
 const weekTimestamps = {
-	4: "1738537200",
-	3: "1737932400",
-	2: "1737327600",
-	1: "1736722800",
+	"Playoffs": "1740628800",
+	"Swiss Stage": "1739736655",
+	// 4: "1738537200",
+	// 3: "1737932400",
+	// 2: "1737327600",
+	// 1: "1736722800",
 }
 
 module.exports.getPagination = async (predictions, events, page, predictionPages) => {
@@ -20,15 +22,15 @@ module.exports.getPagination = async (predictions, events, page, predictionPages
 		const match = event.matches.find(match => predictedMatch.matchId == match.matchId);
 		if (!match) continue;
 
-		let matchTimestamp;
+		let matchTimestamp = match.timestamp;
 
-		for (let i = 0; i < event.bracketContainers.length; i++) {
-			for (let j = 0; j < event.bracketContainers[i].matches.length; j++) {
-				if (event.bracketContainers[i].matches[j].teams.map(team => team.name).join(" vs. ") == `${match.team_one_name} vs. ${match.team_two_name}`) {
-					matchTimestamp = event.bracketContainers[i].matches[j].status;
-				}
-			}
-		}
+		// for (let i = 0; i < event.bracketContainers.length; i++) {
+		// 	for (let j = 0; j < event.bracketContainers[i].matches.length; j++) {
+		// 		if (event.bracketContainers[i].matches[j].teams.map(team => team.name).join(" vs. ") == `${match.team_one_name} vs. ${match.team_two_name}`) {
+		// 			matchTimestamp = event.bracketContainers[i].matches[j].status;
+		// 		}
+		// 	}
+		// }
 		if (!matchTimestamp) continue;
 
 		const matchTime = moment.unix(matchTimestamp);
