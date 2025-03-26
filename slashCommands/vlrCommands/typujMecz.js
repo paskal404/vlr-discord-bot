@@ -69,7 +69,10 @@ module.exports = {
 
 			const matches = event.matches.filter(match => !unavailableMatches.includes(match.matchId) && !matchesAlreadyPredicted.includes(match.matchId));
 
-			const filtered = matches.filter(match => match.matchId.startsWith(focusedOption.value) && !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD") && match.matchId !== "86470");
+			let filtered = matches.filter(match => match.matchId.startsWith(focusedOption.value) && !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD") && match.matchId !== "86470");
+
+			filtered = filtered.slice(0, 25);
+			// console.log(filtered.map(match => ({ name: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`.length })))
 
 			interaction.respond(
 				filtered.map(match => ({ name: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`, value: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]` })),
