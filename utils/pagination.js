@@ -3,7 +3,7 @@ const settings = require("./config.json");
 
 const weekTimestamps = {
 	"Playoffs": "1740628800",
-	"Swiss Stage": "1739736655",
+	"EMEA Stage 1": "1739736655",
 	// 4: "1738537200",
 	// 3: "1737932400",
 	// 2: "1737327600",
