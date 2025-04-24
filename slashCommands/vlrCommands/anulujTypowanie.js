@@ -41,7 +41,9 @@ module.exports = {
 			let event = await eventSchema.findOne({ guildId: interaction.guild.id, $or: [{ eventId }, { name: eventId }] });
 			if (!event) return;
 
-			let matchesAlreadyPredicted = await predictionSchema.find({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId });
+			let matchesAlreadyPredicted = await predictionSchema.find({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId, checked: false });
+
+			matchesAlreadyPredicted = matchesAlreadyPredicted.slice(0, 25);
 
 			interaction.respond(
 				matchesAlreadyPredicted.map(match => ({ name: `${match.matchTitle} [${match.matchId}]`, value: `${match.matchTitle} [${match.matchId}]` })),
