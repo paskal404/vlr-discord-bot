@@ -17,6 +17,28 @@ function parseAndValidateScore(scoreArray) {
 	return [first, second];
 }
 
+function getWeekNumber(firstMatchTimestamp, currentMatchTimestamp) {
+	// Convert timestamps to dates
+	const firstDate = new Date(firstMatchTimestamp * 1000);
+	const currentDate = new Date(currentMatchTimestamp * 1000);
+
+	// Get the start of the week (Monday) for the first match
+	const firstWeekStart = new Date(firstDate);
+	const dayOfWeek = firstDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+	const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert Sunday to 6, others to dayOfWeek - 1
+	firstWeekStart.setDate(firstDate.getDate() - daysToMonday);
+	firstWeekStart.setHours(0, 0, 0, 0);
+
+	// Calculate the difference in milliseconds
+	const timeDiff = currentDate.getTime() - firstWeekStart.getTime();
+
+	// Convert to days and then to weeks
+	const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+	const weekNumber = Math.floor(daysDiff / 7) + 1;
+
+	return weekNumber;
+}
+
 module.exports = {
 	name: "typuj-mecz",
 	data: new SlashCommandBuilder()
@@ -67,15 +89,44 @@ module.exports = {
 			let matchesAlreadyPredicted = await predictionSchema.find({ guildId: interaction.guild.id, userId: interaction.user.id, eventId: event.eventId });
 			matchesAlreadyPredicted = matchesAlreadyPredicted.map(match => match.matchId);
 
-			const matches = event.matches.filter(match => !unavailableMatches.includes(match.matchId) && !matchesAlreadyPredicted.includes(match.matchId));
+			let matches = event.matches.filter(match => !unavailableMatches.includes(match.matchId) && !matchesAlreadyPredicted.includes(match.matchId));
 
-			let filtered = matches.filter(match => match.matchId.startsWith(focusedOption.value) && !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD") && match.matchId !== "86470");
+			// Filter out matches with TBD and specific match ID
+			matches = matches.filter(match => !`${match.team_one_name} vs. ${match.team_two_name}`.includes("TBD") && match.matchId !== "86470");
 
+			// Sort matches by timestamp to ensure consistent week numbering
+			matches.sort((a, b) => a.timestamp - b.timestamp);
+
+			if (matches.length === 0) {
+				interaction.respond([]);
+				return;
+			}
+
+			// Get the timestamp of the first match for week calculation
+			const firstMatchTimestamp = matches[0].timestamp;
+
+			// Add week numbers to matches
+			const matchesWithWeeks = matches.map(match => {
+				const weekNumber = getWeekNumber(firstMatchTimestamp, match.timestamp);
+				return {
+					...match,
+					weekNumber,
+					displayName: `[Week ${weekNumber}] ${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`,
+					value: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`
+				};
+			});
+
+			// Filter by user input
+			let filtered = matchesWithWeeks.filter(match =>
+				match.displayName.toLowerCase().includes(focusedOption.value.toLowerCase()) ||
+				match.matchId.startsWith(focusedOption.value)
+			);
+
+			// Limit to 25 results
 			filtered = filtered.slice(0, 25);
-			// console.log(filtered.map(match => ({ name: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`.length })))
 
 			interaction.respond(
-				filtered.map(match => ({ name: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]`, value: `${match.team_one_name} vs. ${match.team_two_name} (${match.bo}) [${match.matchId}]` })),
+				filtered.map(match => ({ name: match.displayName, value: match.value })),
 			);
 
 			return;
@@ -98,7 +149,7 @@ module.exports = {
 				allPlayers.map(player => ({ name: player, value: player })),
 			);
 		}
-			return;
+		return;
 
 	},
 	run: async (client, interaction) => {
