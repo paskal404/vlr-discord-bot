@@ -102,8 +102,10 @@ module.exports = {
 				return;
 			}
 
-			// Get the timestamp of the first match for week calculation
-			const firstMatchTimestamp = matches[0].timestamp;
+			// POPRAWKA: Używamy wszystkich meczy z wydarzenia do obliczenia tygodni
+			// Sortujemy WSZYSTKIE mecze, aby znaleźć najwcześniejszy timestamp
+			const allMatches = [...event.matches].sort((a, b) => a.timestamp - b.timestamp);
+			const firstMatchTimestamp = allMatches[0].timestamp;
 
 			// Add week numbers to matches
 			const matchesWithWeeks = matches.map(match => {
