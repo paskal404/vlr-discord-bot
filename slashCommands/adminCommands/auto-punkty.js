@@ -28,14 +28,29 @@ module.exports = {
                     .addChannelTypes(ChannelType.GuildText)
                     .setRequired(true)))
 
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('sprawdź-punkty')
+                .setDescription("Pokazuje leaderboard punktów")
+                .addStringOption(option => option
+                    .setName('typ')
+                    .setDescription("Wybierz typ leaderboardu")
+                    .addChoices(
+                        { name: 'Tygodniowe punkty', value: 'weekly' },
+                        { name: 'Punkty ogółem', value: 'alltime' }
+                    )
+                    .setRequired(true)))
+
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     run: async (client, interaction) => {
         try {
-			await interaction.deferReply({ ephemeral: true });
-
             const subCommand = interaction.options.getSubcommand()
+
+            // For leaderboard, make it public; for setup, keep it private
+            const isLeaderboard = subCommand === "sprawdź-punkty";
+			await interaction.deferReply({ ephemeral: !isLeaderboard });
 
             const guild = interaction.guild;
 
@@ -73,7 +88,21 @@ module.exports = {
 				await autoPoints.sendAllTimePredictionStatistics(guild, channel);
                 await autoPoints.sendWeeklyPredictionStatistics(guild, channel);
 
-                return interaction.editReply({ content: "Pomyślnie skonfigurowano!", ephemeral: true, });
+                return interaction.editReply({ content: "Pomyślnie skonfigurowano!" });
+            } else if (subCommand === "sprawdź-punkty") {
+                const typ = interaction.options.getString("typ");
+                const moment = require("moment-timezone");
+                const date = moment().tz('Europe/Warsaw');
+
+                let response;
+
+                if (typ === "weekly") {
+                    response = await autoPoints.calculateWeeklyPredictionPoints(guild, date);
+                    return interaction.editReply(response.newMessage);
+                } else if (typ === "alltime") {
+                    response = await autoPoints.calculateAllTimePredictionPoints(guild, date);
+                    return interaction.editReply(response.newMessage);
+                }
             }
         } catch (err) {
             console.log(err)
