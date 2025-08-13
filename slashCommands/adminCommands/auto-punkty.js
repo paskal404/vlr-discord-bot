@@ -39,7 +39,13 @@ module.exports = {
                         { name: 'Tygodniowe punkty', value: 'weekly' },
                         { name: 'Punkty ogółem', value: 'alltime' }
                     )
-                    .setRequired(true)))
+                    .setRequired(true))
+                .addIntegerOption(option => option
+                    .setName('tygodnie-wstecz')
+                    .setDescription("Ile tygodni wstecz sprawdzić (tylko dla tygodniowych punktów)")
+                    .setMinValue(0)
+                    .setMaxValue(52)
+                    .setRequired(false)))
 
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
@@ -91,15 +97,33 @@ module.exports = {
                 return interaction.editReply({ content: "Pomyślnie skonfigurowano!" });
             } else if (subCommand === "sprawdź-punkty") {
                 const typ = interaction.options.getString("typ");
+                const weeksBack = interaction.options.getInteger("tygodnie-wstecz") || 0;
                 const moment = require("moment-timezone");
-                const date = moment().tz('Europe/Warsaw');
-
+                
                 let response;
 
                 if (typ === "weekly") {
+                    // Calculate the date for the requested week
+                    const date = moment().tz('Europe/Warsaw').subtract(weeksBack, 'weeks');
+                    
                     response = await autoPoints.calculateWeeklyPredictionPoints(guild, date);
+                    
+                    // Modify the title to show which week we're looking at
+                    if (weeksBack > 0) {
+                        const weekText = weeksBack === 1 ? "tydzień temu" : `${weeksBack} tygodni temu`;
+                        response.newMessage.embeds[0].title = `Statystyki tygodniowe typowania (${weekText})`;
+                    }
+                    
                     return interaction.editReply(response.newMessage);
                 } else if (typ === "alltime") {
+                    // Weeks back doesn't apply to all-time stats
+                    if (weeksBack > 0) {
+                        return interaction.editReply({
+                            content: "Parametr 'tygodnie-wstecz' nie ma zastosowania dla statystyk ogólnych."
+                        });
+                    }
+                    
+                    const date = moment().tz('Europe/Warsaw');
                     response = await autoPoints.calculateAllTimePredictionPoints(guild, date);
                     return interaction.editReply(response.newMessage);
                 }
