@@ -106,7 +106,7 @@ module.exports = {
                     // Calculate the date for the requested week
                     const date = moment().tz('Europe/Warsaw').subtract(weeksBack, 'weeks');
                     
-                    response = await autoPoints.calculateWeeklyPredictionPoints(guild, date);
+                    response = await autoPoints.calculateWeeklyPredictionPoints2(guild, date);
                     
                     // Modify the title to show which week we're looking at
                     if (weeksBack > 0) {

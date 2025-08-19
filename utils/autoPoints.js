@@ -147,9 +147,78 @@ async function statisticsDescription({ guild, slicedSchemaResponse, timestamp, t
     }
 }
 
+async function statisticsDescription2({ guild, slicedSchemaResponse, timestamp, type, link, title, reward, timeType }) {
+    let description = "";
+
+    for (let i = 0; i < 20; i++) {
+        const lineStartText = indexPrefix[i];
+
+        if (slicedSchemaResponse[i]) {
+            const object = await objectCalculator(guild, slicedSchemaResponse[i], type);
+
+            description += `${lineStartText} ${object} \n${i == 0 ? `\n` : ``}`;
+        } else {
+            description += `${lineStartText} ―\n`;
+        }
+    }
+
+    //description += `\n${settings.emoji_arrow_animated} TOP 1 otrzymuje ${reward}\n`;
+
+    // if (slicedSchemaResponse[0] && !slicedSchemaResponse[0].clanTag && timeType == "weekly") {
+    //     description += `test\n`;
+    // }
+
+    if (timeType != "allTime") description += `\nResetuje się <t:${timestamp}:R>`;
+
+    let embed = new discord.EmbedBuilder()
+        .setColor(settings.color_light_blue)
+        .setTitle(title)
+        .setDescription(description)
+        .setThumbnail(guild.iconURL())
+        .setFooter({ iconURL: guild.iconURL(), text: "VLR Tracker | Odświeża się co 5 minut" })
+
+    // const row = new discord.ActionRowBuilder()
+    //     .addComponents(
+    //         new discord.ButtonBuilder()
+    //             .setLabel('ZOSTAŃ TOP 1')
+    //             .setURL(link)
+    //             .setStyle(discord.ButtonStyle.Link),
+    //     )
+
+    return {
+        embeds: [embed.data],
+        // components: [row]
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////  STATYSTYKI TYGODNIOWE PUNKTOWE  /////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
+
+module.exports.calculateWeeklyPredictionPoints2 = async (guild, date) => {
+    const { fromBeginningToStartOfTheWeek, polishTimestampOfEndOfTheWeek } = momentCalculateWeekly(date);
+
+    const schemaResponse = await predictionSchema.find({ guildId: guild.id, checkedAt: { $gte: fromBeginningToStartOfTheWeek } });
+
+    const slicedSchemaResponse = topPredictionUsers(schemaResponse).slice(0, 20);
+
+    let newMessage = await statisticsDescription2({
+        guild,
+        slicedSchemaResponse,
+        timestamp: polishTimestampOfEndOfTheWeek,
+        type: "points",
+        //link: "https://ptb.discord.com/channels/785823704805802014/834118201431425034",
+        title: "Statystyki tygodniowe typowania",
+        //reward: "**1x Skrzynka zwykła** do !eq",
+        timeType: "weekly"
+    });
+
+    return {
+        newMessage,
+        polishTimestampOfEndOfTheWeek,
+        slicedSchema: slicedSchemaResponse,
+    }
+}
 
 module.exports.calculateWeeklyPredictionPoints = async (guild, date) => {
     const { fromBeginningToStartOfTheWeek, polishTimestampOfEndOfTheWeek } = momentCalculateWeekly(date);
