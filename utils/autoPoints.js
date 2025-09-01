@@ -270,8 +270,10 @@ module.exports.updateWeeklyPredictionStatistics = async (guild, channel, message
 
     const response = await this.calculateWeeklyPredictionPoints(guild, date);
 
-    const { topWeeklyPointsRewardTimestamp } = await autoPointsSchema.findOneAndUpdate({ guildId: guild.id }, { topWeeklyPointsRewardTimestamp: response.polishTimestampOfEndOfTheWeek });
+    const { topWeeklyPointsMessageId, topWeeklyPointsRewardTimestamp } = await autoPointsSchema.findOneAndUpdate({ guildId: guild.id }, { topWeeklyPointsRewardTimestamp: response.polishTimestampOfEndOfTheWeek });
     // let { topWeeklyPointsRewardTimestamp } = await autoPointsSchema.findOne({ guildId: guild.id });
+
+    if (topWeeklyPointsMessageId == "0") return;
 
     if (topWeeklyPointsRewardTimestamp != "0" && response.polishTimestampOfEndOfTheWeek > topWeeklyPointsRewardTimestamp) {
 
