@@ -56,6 +56,15 @@ module.exports = {
                 }
 
 
+                // Special multiplier for event 2283 matches from 25.09.2025 onwards
+                // Double points if all typing predictions are correct (outcome + score + top fragger)
+                if (event.eventId === "2283" && match.date && new Date(match.date) >= new Date("2025-09-25")) {
+                    // Check if user got everything correct in typing (all 3 predictions)
+                    if (topFraggerGuessed && predictedOutcomeGuessed === "wholeScore") {
+                        points = points * 2; // Double the points
+                    }
+                }
+
                 // console.log(points)
 
                 await predictionSchema.updateOne({ _id: predictionDoc._id }, { checkedAt: Date.now(), checked: true, points, topFraggerGuessed, predictedOutcomeGuessed });
